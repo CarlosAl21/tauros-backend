@@ -19,16 +19,22 @@ export class PlanEntrenamientoController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.planEntrenamientoService.findOne(+id);
+    return this.planEntrenamientoService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePlanEntrenamientoDto: UpdatePlanEntrenamientoDto) {
-    return this.planEntrenamientoService.update(+id, updatePlanEntrenamientoDto);
+    return this.planEntrenamientoService.update(id, updatePlanEntrenamientoDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.planEntrenamientoService.remove(+id);
+    return this.planEntrenamientoService.remove(id);
   }
+
+  @Post('asignar-plan')
+  asignarPlan(@Body() asignarPlanDto: { planEntrenamientoId: string, usuarioId: string }) {
+    return this.planEntrenamientoService.asignarPlan(asignarPlanDto.planEntrenamientoId, asignarPlanDto.usuarioId);
+  }
+
 }

@@ -10,16 +10,16 @@ export class ComposicionCorporal {
     @Column()
     peso: number;
 
-    @Column()
+    @Column({ nullable: true })
     talla: number;
 
-    @Column()
+    @Column({ nullable: true })
     grasaCorporal: number;
 
-    @Column()
+    @Column({ nullable: true })
     edadCorporal: number;
 
-    @Column()
+    @Column({ nullable: true })
     grasaVisceral: number;
 
     @Column({default: () => 'CURRENT_TIMESTAMP'})

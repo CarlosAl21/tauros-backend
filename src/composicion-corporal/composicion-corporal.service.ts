@@ -1,26 +1,73 @@
 import { Injectable } from '@nestjs/common';
 import { CreateComposicionCorporalDto } from './dto/create-composicion-corporal.dto';
 import { UpdateComposicionCorporalDto } from './dto/update-composicion-corporal.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ComposicionCorporal } from './entities/composicion-corporal.entity';
+import { Usuario } from 'src/usuario/entities/usuario.entity';
 
 @Injectable()
 export class ComposicionCorporalService {
-  create(createComposicionCorporalDto: CreateComposicionCorporalDto) {
-    return 'This action adds a new composicionCorporal';
+
+  constructor(
+    @InjectRepository(ComposicionCorporal)
+    private readonly composicionCorporalRepository: Repository<ComposicionCorporal>,
+
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
+  ) {}
+
+  async create(createComposicionCorporalDto: CreateComposicionCorporalDto) {
+    const usuario = await this.usuarioRepository.findOne({ where: { userId: createComposicionCorporalDto.usuarioId } });
+    if (!usuario) {
+      throw new Error('Usuario not found');
+    }
+    const composicionCorporal = this.composicionCorporalRepository.create({
+      peso: createComposicionCorporalDto.peso,
+      talla: createComposicionCorporalDto.talla,
+      grasaCorporal: createComposicionCorporalDto.grasaCorporal,
+      edadCorporal: createComposicionCorporalDto.edadCorporal,
+      grasaVisceral: createComposicionCorporalDto.grasaVisceral,
+      usuario: usuario,
+    });
+    return this.composicionCorporalRepository.save(composicionCorporal);
   }
 
-  findAll() {
-    return `This action returns all composicionCorporal`;
+  async findAll() {
+    return this.composicionCorporalRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} composicionCorporal`;
+  async findOne(id: string) {
+    return this.composicionCorporalRepository.findOne({ where: { composicionCorporalId:id } });
   }
 
-  update(id: number, updateComposicionCorporalDto: UpdateComposicionCorporalDto) {
-    return `This action updates a #${id} composicionCorporal`;
+  async update(id: string, updateComposicionCorporalDto: UpdateComposicionCorporalDto) {
+    const composicionActual = await this.composicionCorporalRepository.findOne({
+      where: { composicionCorporalId: id },
+      relations: ['usuario'],
+    });
+    if (!composicionActual) {
+      throw new Error('ComposicionCorporal not found');
+    }
+
+    const nuevaComposicion = this.composicionCorporalRepository.create({
+      peso: updateComposicionCorporalDto.peso ?? composicionActual.peso,
+      talla: updateComposicionCorporalDto.talla ?? composicionActual.talla,
+      grasaCorporal: updateComposicionCorporalDto.grasaCorporal ?? composicionActual.grasaCorporal,
+      edadCorporal: updateComposicionCorporalDto.edadCorporal ?? composicionActual.edadCorporal,
+      grasaVisceral: updateComposicionCorporalDto.grasaVisceral ?? composicionActual.grasaVisceral,
+      usuario: composicionActual.usuario,
+    });
+
+    return this.composicionCorporalRepository.save(nuevaComposicion);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} composicionCorporal`;
+  async remove(id: string) {
+    const composicion = await this.composicionCorporalRepository.findOne({ where: { composicionCorporalId: id } });
+    if (!composicion) {
+      throw new Error('ComposicionCorporal not found');
+    }
+    return this.composicionCorporalRepository.remove(composicion);
   }
+  
 }

@@ -17,18 +17,28 @@ export class EventoController {
     return this.eventoService.findAll();
   }
 
+  @Get('activos')
+  findActivos() {
+    return this.eventoService.findActivos();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.eventoService.findOne(+id);
+    return this.eventoService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateEventoDto: UpdateEventoDto) {
-    return this.eventoService.update(+id, updateEventoDto);
+    return this.eventoService.update(id, updateEventoDto);
+  }
+
+  @Post(':eventoId/participantes/:usuarioId')
+  registrarParticipante(@Param('eventoId') eventoId: string, @Param('usuarioId') usuarioId: string) {
+    return this.eventoService.registrarParticipante(eventoId, usuarioId);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.eventoService.remove(+id);
+    return this.eventoService.remove(id);
   }
 }

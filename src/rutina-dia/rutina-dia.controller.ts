@@ -19,16 +19,16 @@ export class RutinaDiaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.rutinaDiaService.findOne(+id);
+    return this.rutinaDiaService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRutinaDiaDto: UpdateRutinaDiaDto) {
-    return this.rutinaDiaService.update(+id, updateRutinaDiaDto);
+    return this.rutinaDiaService.update(id, updateRutinaDiaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.rutinaDiaService.remove(+id);
+    return this.rutinaDiaService.remove(id);
   }
 }

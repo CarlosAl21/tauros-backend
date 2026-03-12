@@ -10,14 +10,20 @@ export class Evento {
     @Column()
     nombre: string;
 
-    @Column()
+    @Column({ type: 'timestamptz' })
     fechaHora: Date;
 
-    @Column()
+    @Column({default: 0})
     numParticipantes: number;
 
     @Column()
     lugar: string;
+
+    @Column()
+    descripcion: string;
+
+    @Column({default: true})
+    activo: boolean;
 
     @ManyToMany(() => Usuario, usuario => usuario.eventos)
     @JoinTable({name: 'evento_participantes'})

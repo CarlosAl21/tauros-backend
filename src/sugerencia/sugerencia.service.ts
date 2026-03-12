@@ -1,26 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { CreateSugerenciaDto } from './dto/create-sugerencia.dto';
 import { UpdateSugerenciaDto } from './dto/update-sugerencia.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Sugerencia } from './entities/sugerencia.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class SugerenciaService {
-  create(createSugerenciaDto: CreateSugerenciaDto) {
-    return 'This action adds a new sugerencia';
+
+  constructor(
+    @InjectRepository(Sugerencia) 
+    private readonly sugerenciaRepository: Repository<Sugerencia>,
+  ) {}
+
+  async create(createSugerenciaDto: CreateSugerenciaDto) {
+    const sugerencia = this.sugerenciaRepository.create(createSugerenciaDto);
+    return this.sugerenciaRepository.save(sugerencia);
   }
 
-  findAll() {
-    return `This action returns all sugerencia`;
+  async findAll() {
+    return this.sugerenciaRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} sugerencia`;
+  async findOne(id: string) {
+    return this.sugerenciaRepository.findOne({ where: { sugerenciaId: id } });
   }
 
-  update(id: number, updateSugerenciaDto: UpdateSugerenciaDto) {
-    return `This action updates a #${id} sugerencia`;
+  async update(id: string, updateSugerenciaDto: UpdateSugerenciaDto) {
+    await this.sugerenciaRepository.update({ sugerenciaId: id }, updateSugerenciaDto);
+    return this.findOne(id);  
   }
 
-  remove(id: number) {
+  async remove(id: string) {
+    await this.sugerenciaRepository.delete({ sugerenciaId: id });
     return `This action removes a #${id} sugerencia`;
   }
 }

@@ -30,8 +30,8 @@ export class Ejercicio {
     @OneToMany(() => RutinaEjercicio, rutinaEjercicio => rutinaEjercicio.ejercicio)
     rutinasEjercicio: RutinaEjercicio[];
 
-    @ManyToOne(() => Maquina, maquina => maquina.ejercicios)
+    @ManyToOne(() => Maquina, maquina => maquina.ejercicios, { nullable: true })
     @JoinColumn({ name: 'maquinaId' })
-    maquina: Maquina;
+    maquina: Maquina | null;
     
 }

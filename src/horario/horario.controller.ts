@@ -19,16 +19,16 @@ export class HorarioController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.horarioService.findOne(+id);
+    return this.horarioService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateHorarioDto: UpdateHorarioDto) {
-    return this.horarioService.update(+id, updateHorarioDto);
+    return this.horarioService.update(id, updateHorarioDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.horarioService.remove(+id);
+    return this.horarioService.remove(id);
   }
 }

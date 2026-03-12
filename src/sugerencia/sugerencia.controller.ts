@@ -19,16 +19,16 @@ export class SugerenciaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.sugerenciaService.findOne(+id);
+    return this.sugerenciaService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateSugerenciaDto: UpdateSugerenciaDto) {
-    return this.sugerenciaService.update(+id, updateSugerenciaDto);
+    return this.sugerenciaService.update(id, updateSugerenciaDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.sugerenciaService.remove(+id);
+    return this.sugerenciaService.remove(id);
   }
 }

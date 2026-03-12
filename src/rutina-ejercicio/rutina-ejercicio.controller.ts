@@ -19,16 +19,16 @@ export class RutinaEjercicioController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.rutinaEjercicioService.findOne(+id);
+    return this.rutinaEjercicioService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateRutinaEjercicioDto: UpdateRutinaEjercicioDto) {
-    return this.rutinaEjercicioService.update(+id, updateRutinaEjercicioDto);
+    return this.rutinaEjercicioService.update(id, updateRutinaEjercicioDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.rutinaEjercicioService.remove(+id);
+    return this.rutinaEjercicioService.remove(id);
   }
 }

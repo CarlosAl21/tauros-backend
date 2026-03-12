@@ -19,16 +19,16 @@ export class ComposicionCorporalController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.composicionCorporalService.findOne(+id);
+    return this.composicionCorporalService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateComposicionCorporalDto: UpdateComposicionCorporalDto) {
-    return this.composicionCorporalService.update(+id, updateComposicionCorporalDto);
+    return this.composicionCorporalService.update(id, updateComposicionCorporalDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.composicionCorporalService.remove(+id);
+    return this.composicionCorporalService.remove(id);
   }
 }
