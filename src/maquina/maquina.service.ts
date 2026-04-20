@@ -5,18 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Maquina } from './entities/maquina.entity';
 import { Repository } from 'typeorm';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
-
-type MulterFile = {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  buffer: Buffer;
-  destination?: string;
-  filename?: string;
-  path?: string;
-};
+import 'multer';
 
 @Injectable()
 export class MaquinaService {
@@ -28,7 +17,7 @@ export class MaquinaService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createMaquinaDto: CreateMaquinaDto, file?: MulterFile) {
+  async create(createMaquinaDto: CreateMaquinaDto, file?: Express.Multer.File) {
     const linkFoto = await this.resolveLinkFoto({
       currentValue: createMaquinaDto.linkFoto,
       file,
@@ -55,7 +44,7 @@ export class MaquinaService {
   async update(
     id: string,
     updateMaquinaDto: UpdateMaquinaDto,
-    file?: MulterFile,
+    file?: Express.Multer.File,
   ) {
     const maquina = await this.maquinaRepository.findOne({
       where: { maquinaId: id },
@@ -90,7 +79,7 @@ export class MaquinaService {
   private async resolveLinkFoto(options: {
     currentValue?: string;
     providedValue?: string;
-    file?: MulterFile;
+    file?: Express.Multer.File;
     required?: boolean;
   }) {
     if (options.file) {

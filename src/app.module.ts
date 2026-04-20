@@ -28,17 +28,28 @@ import { AuthModule } from './auth/auth.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
-        username: configService.get('DB_USERNAME', 'postgres'),
-        password: configService.get('DB_PASSWORD', 'postgres'),
-        database: configService.get('DB_NAME', 'tauros_db'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV', 'development') === 'development',
-        logging: false,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const appSchema = configService.get('DB_SCHEMA', 'tauros_app');
+        const extensionSchema = configService.get('DB_EXTENSION_SCHEMA', appSchema);
+        const quoteSchema = (schema: string) => `"${schema.replace(/"/g, '""')}"`;
+        const searchPath = `${quoteSchema(appSchema)},${quoteSchema(extensionSchema)},public`;
+
+        return {
+          type: 'postgres',
+          host: configService.get('DB_HOST', 'localhost'),
+          port: configService.get('DB_PORT', 5432),
+          username: configService.get('DB_USERNAME', 'postgres'),
+          password: configService.get('DB_PASSWORD', 'postgres'),
+          database: configService.get('DB_NAME', 'tauros_db'),
+          schema: appSchema,
+          extra: {
+            options: `-c search_path=${searchPath}`,
+          },
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: configService.get('NODE_ENV', 'development') === 'development',
+          logging: false,
+        };
+      },
     }),
     UsuarioModule,
     ComposicionCorporalModule,
