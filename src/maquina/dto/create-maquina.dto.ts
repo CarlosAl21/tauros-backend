@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateMaquinaDto {
 
@@ -6,10 +7,11 @@ export class CreateMaquinaDto {
     @IsNotEmpty()
     nombre: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    linkFoto: string;
+    linkFoto?: string;
 
+    @Type(() => Number)
     @IsNumber()
     @IsNotEmpty()
     numeroMaquina: number;

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateEjercicioDto {
 
@@ -6,13 +6,13 @@ export class CreateEjercicioDto {
     @IsNotEmpty()
     nombre: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    linkVideo: string;
+    linkVideo?: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    linkAM: string;
+    linkAM?: string;
 
     @IsString()
     @IsNotEmpty()

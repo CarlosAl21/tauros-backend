@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateEjercicioDto } from './dto/create-ejercicio.dto';
 import { UpdateEjercicioDto } from './dto/update-ejercicio.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +7,12 @@ import { Ejercicio } from './entities/ejercicio.entity';
 import { Categoria } from 'src/categoria/entities/categoria.entity';
 import { Tipo } from 'src/tipo/entities/tipo.entity';
 import { Maquina } from 'src/maquina/entities/maquina.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+
+type EjercicioFiles = {
+  linkVideo?: Express.Multer.File[];
+  linkAM?: Express.Multer.File[];
+};
 
 @Injectable()
 export class EjercicioService {
@@ -22,9 +28,14 @@ export class EjercicioService {
 
     @InjectRepository(Maquina)
     private readonly maquinaRepository: Repository<Maquina>,
+
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(createEjercicioDto: CreateEjercicioDto) {
+  async create(
+    createEjercicioDto: CreateEjercicioDto,
+    files?: EjercicioFiles,
+  ) {
     const categoria = await this.categoriaRepository.findOne({
       where: { categoriaId: createEjercicioDto.categoriaId },
     });
@@ -48,8 +59,24 @@ export class EjercicioService {
       throw new Error('Tipo not found');
     }
 
+    const linkVideo = await this.resolveMediaLink({
+      currentValue: createEjercicioDto.linkVideo,
+      file: files?.linkVideo?.[0],
+      folder: 'tauros/ejercicios/video',
+      required: true,
+    });
+
+    const linkAM = await this.resolveMediaLink({
+      currentValue: createEjercicioDto.linkAM,
+      file: files?.linkAM?.[0],
+      folder: 'tauros/ejercicios/archivo',
+      required: true,
+    });
+
     const ejercicio = this.ejercicioRepository.create({
-      ...createEjercicioDto,
+      nombre: createEjercicioDto.nombre,
+      linkVideo,
+      linkAM,
       categoria,
       tipo,
       maquina,
@@ -66,7 +93,11 @@ export class EjercicioService {
     return this.ejercicioRepository.findOne({ where: { ejercicioId: id } });
   }
 
-  async update(id: string, updateEjercicioDto: UpdateEjercicioDto) {
+  async update(
+    id: string,
+    updateEjercicioDto: UpdateEjercicioDto,
+    files?: EjercicioFiles,
+  ) {
     const ejercicio = await this.ejercicioRepository.findOne({
       where: { ejercicioId: id },
     });
@@ -74,8 +105,23 @@ export class EjercicioService {
       throw new Error('Ejercicio not found');
     }
 
-    const { categoriaId, tipoId, maquinaId, ejercicioId, ...campos } =
-      updateEjercicioDto;
+    const { categoriaId, tipoId, maquinaId } = updateEjercicioDto;
+    const linkVideoEntrada = updateEjercicioDto.linkVideo;
+    const linkAMEntrada = updateEjercicioDto.linkAM;
+
+    const linkVideoActual = await this.resolveMediaLink({
+      currentValue: ejercicio.linkVideo,
+      providedValue: linkVideoEntrada,
+      file: files?.linkVideo?.[0],
+      folder: 'tauros/ejercicios/video',
+    });
+
+    const linkAMActual = await this.resolveMediaLink({
+      currentValue: ejercicio.linkAM,
+      providedValue: linkAMEntrada,
+      file: files?.linkAM?.[0],
+      folder: 'tauros/ejercicios/archivo',
+    });
 
     if (categoriaId) {
       const categoria = await this.categoriaRepository.findOne({
@@ -109,7 +155,17 @@ export class EjercicioService {
       }
     }
 
-    Object.assign(ejercicio, campos);
+    const camposActualizables = { ...updateEjercicioDto } as Record<string, unknown>;
+    delete camposActualizables.categoriaId;
+    delete camposActualizables.tipoId;
+    delete camposActualizables.maquinaId;
+    delete camposActualizables.ejercicioId;
+    delete camposActualizables.linkVideo;
+    delete camposActualizables.linkAM;
+
+    Object.assign(ejercicio, camposActualizables);
+    ejercicio.linkVideo = linkVideoActual;
+    ejercicio.linkAM = linkAMActual;
 
     return this.ejercicioRepository.save(ejercicio);
   }
@@ -117,5 +173,31 @@ export class EjercicioService {
   async remove(id: string) {
     await this.ejercicioRepository.delete(id);
     return { message: 'Ejercicio removed successfully' };
+  }
+
+  private async resolveMediaLink(options: {
+    currentValue?: string;
+    providedValue?: string;
+    file?: Express.Multer.File;
+    folder: string;
+    required?: boolean;
+  }) {
+    if (options.file) {
+      return this.cloudinaryService.uploadFile(options.file, options.folder);
+    }
+
+    if (options.providedValue) {
+      return options.providedValue;
+    }
+
+    if (options.currentValue) {
+      return options.currentValue;
+    }
+
+    if (options.required) {
+      throw new BadRequestException('Debes enviar un archivo o un enlace válido');
+    }
+
+    return options.currentValue;
   }
 }

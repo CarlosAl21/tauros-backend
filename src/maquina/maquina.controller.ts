@@ -1,15 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
 import { MaquinaService } from './maquina.service';
 import { CreateMaquinaDto } from './dto/create-maquina.dto';
 import { UpdateMaquinaDto } from './dto/update-maquina.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('maquina')
 export class MaquinaController {
   constructor(private readonly maquinaService: MaquinaService) {}
 
   @Post()
-  create(@Body() createMaquinaDto: CreateMaquinaDto) {
-    return this.maquinaService.create(createMaquinaDto);
+  @UseInterceptors(FileInterceptor('linkFoto'))
+  create(
+    @Body() createMaquinaDto: CreateMaquinaDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.maquinaService.create(createMaquinaDto, file);
   }
 
   @Get()
@@ -23,8 +38,13 @@ export class MaquinaController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMaquinaDto: UpdateMaquinaDto) {
-    return this.maquinaService.update(id, updateMaquinaDto);
+  @UseInterceptors(FileInterceptor('linkFoto'))
+  update(
+    @Param('id') id: string,
+    @Body() updateMaquinaDto: UpdateMaquinaDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.maquinaService.update(id, updateMaquinaDto, file);
   }
 
   @Delete(':id')

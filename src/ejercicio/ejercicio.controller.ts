@@ -1,15 +1,39 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
 import { EjercicioService } from './ejercicio.service';
 import { CreateEjercicioDto } from './dto/create-ejercicio.dto';
 import { UpdateEjercicioDto } from './dto/update-ejercicio.dto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('ejercicio')
 export class EjercicioController {
   constructor(private readonly ejercicioService: EjercicioService) {}
 
   @Post()
-  create(@Body() createEjercicioDto: CreateEjercicioDto) {
-    return this.ejercicioService.create(createEjercicioDto);
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'linkVideo', maxCount: 1 },
+      { name: 'linkAM', maxCount: 1 },
+    ]),
+  )
+  create(
+    @Body() createEjercicioDto: CreateEjercicioDto,
+    @UploadedFiles()
+    files: {
+      linkVideo?: Express.Multer.File[];
+      linkAM?: Express.Multer.File[];
+    },
+  ) {
+    return this.ejercicioService.create(createEjercicioDto, files);
   }
 
   @Get()
@@ -23,8 +47,22 @@ export class EjercicioController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEjercicioDto: UpdateEjercicioDto) {
-    return this.ejercicioService.update(id, updateEjercicioDto);
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'linkVideo', maxCount: 1 },
+      { name: 'linkAM', maxCount: 1 },
+    ]),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() updateEjercicioDto: UpdateEjercicioDto,
+    @UploadedFiles()
+    files: {
+      linkVideo?: Express.Multer.File[];
+      linkAM?: Express.Multer.File[];
+    },
+  ) {
+    return this.ejercicioService.update(id, updateEjercicioDto, files);
   }
 
   @Delete(':id')
