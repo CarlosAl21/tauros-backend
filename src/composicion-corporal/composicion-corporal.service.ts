@@ -30,15 +30,22 @@ export class ComposicionCorporalService {
       grasaVisceral: createComposicionCorporalDto.grasaVisceral,
       usuario: usuario,
     });
-    return this.composicionCorporalRepository.save(composicionCorporal);
+    const saved = await this.composicionCorporalRepository.save(composicionCorporal);
+    return this.composicionCorporalRepository.findOne({
+      where: { composicionCorporalId: saved.composicionCorporalId },
+      relations: ['usuario'],
+    });
   }
 
   async findAll() {
-    return this.composicionCorporalRepository.find();
+    return this.composicionCorporalRepository.find({ relations: ['usuario'] });
   }
 
   async findOne(id: string) {
-    return this.composicionCorporalRepository.findOne({ where: { composicionCorporalId:id } });
+    return this.composicionCorporalRepository.findOne({
+      where: { composicionCorporalId:id },
+      relations: ['usuario'],
+    });
   }
 
   async update(id: string, updateComposicionCorporalDto: UpdateComposicionCorporalDto) {
@@ -59,7 +66,11 @@ export class ComposicionCorporalService {
       usuario: composicionActual.usuario,
     });
 
-    return this.composicionCorporalRepository.save(nuevaComposicion);
+    const saved = await this.composicionCorporalRepository.save(nuevaComposicion);
+    return this.composicionCorporalRepository.findOne({
+      where: { composicionCorporalId: saved.composicionCorporalId },
+      relations: ['usuario'],
+    });
   }
 
   async remove(id: string) {

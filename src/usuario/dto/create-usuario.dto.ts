@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Rol } from '../entities/usuario.entity';
 
 export class CreateUsuarioDto {
 
@@ -29,4 +30,8 @@ export class CreateUsuarioDto {
     @IsString()
     @IsNotEmpty()
     telefono: string;
+
+    @IsOptional()
+    @IsEnum(Rol)
+    rol?: Rol;
 }

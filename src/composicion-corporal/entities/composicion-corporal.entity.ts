@@ -1,5 +1,5 @@
 import { Usuario } from "src/usuario/entities/usuario.entity";
-import { BeforeInsert, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 
 @Entity()
 export class ComposicionCorporal {
@@ -28,6 +28,9 @@ export class ComposicionCorporal {
     @ManyToOne(() => Usuario, usuario => usuario.composicionCorporal)
     @JoinColumn({ name: 'usuarioId' })
     usuario: Usuario;
+
+    @RelationId((composicionCorporal: ComposicionCorporal) => composicionCorporal.usuario)
+    usuarioId: string;
     
 
 }

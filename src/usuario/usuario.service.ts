@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Usuario } from './entities/usuario.entity';
+import { Rol, Usuario } from './entities/usuario.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -10,6 +11,38 @@ export class UsuarioService {
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
+
+  async create(createUsuarioDto: CreateUsuarioDto, currentRole?: Rol) {
+    try {
+      const existingUserByEmail = await this.usuarioRepository.findOne({
+        where: { correo: createUsuarioDto.correo },
+      });
+
+      if (existingUserByEmail) {
+        throw new ConflictException('El correo ya está registrado');
+      }
+
+      const existingUserByCedula = await this.usuarioRepository.findOne({
+        where: { cedula: createUsuarioDto.cedula },
+      });
+
+      if (existingUserByCedula) {
+        throw new ConflictException('La cédula ya está registrada');
+      }
+
+      const rol = currentRole === Rol.ADMIN ? (createUsuarioDto.rol ?? Rol.USER) : Rol.USER;
+      const usuario = this.usuarioRepository.create({
+        ...createUsuarioDto,
+        fechaNacimiento: new Date(createUsuarioDto.fechaNacimiento),
+        rol,
+      });
+
+      return await this.usuarioRepository.save(usuario);
+    } catch (error) {
+      console.error('Error creando usuario:', error);
+      throw error;
+    }
+  }
 
   async findAll() {
     try {

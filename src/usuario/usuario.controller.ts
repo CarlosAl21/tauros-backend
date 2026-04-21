@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { Rol } from './entities/usuario.entity';
@@ -12,6 +13,12 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 @Controller('usuario')
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
+
+  @Post()
+  @Roles(Rol.ADMIN, Rol.COACH)
+  create(@Body() createUsuarioDto: CreateUsuarioDto, @Request() req) {
+    return this.usuarioService.create(createUsuarioDto, req.user?.rol);
+  }
 
   @Get()
   @Roles(Rol.ADMIN, Rol.COACH)
