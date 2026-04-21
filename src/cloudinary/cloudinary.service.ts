@@ -17,9 +17,34 @@ export class CloudinaryService {
       throw new BadRequestException('Archivo no proporcionado');
     }
 
+    const isVideo = (file.mimetype || '').startsWith('video/');
+    const isImage = (file.mimetype || '').startsWith('image/');
+
+    const resourceType = isVideo ? 'video' : (isImage ? 'image' : 'auto');
+
+    const transformation = isVideo
+      ? [
+          {
+            quality: 'auto:good',
+            width: 1280,
+            crop: 'limit',
+            video_codec: 'auto',
+            audio_codec: 'aac',
+            bit_rate: '1200k',
+          },
+        ]
+      : [
+          {
+            quality: 'auto:good',
+            fetch_format: 'auto',
+            width: 1200,
+            crop: 'limit',
+          },
+        ];
+
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        { folder, resource_type: 'auto' },
+        { folder, resource_type: resourceType, transformation },
         (error, result) => {
           if (error || !result?.secure_url) {
             reject(
