@@ -82,15 +82,31 @@ export class EjercicioService {
       maquina,
     });
 
-    return this.ejercicioRepository.save(ejercicio);
+    const savedEjercicio = await this.ejercicioRepository.save(ejercicio);
+    return this.findOne(savedEjercicio.ejercicioId);
   }
 
   async findAll() {
-    return this.ejercicioRepository.find();
+    const ejercicios = await this.ejercicioRepository
+      .createQueryBuilder('ejercicio')
+      .leftJoinAndSelect('ejercicio.categoria', 'categoria')
+      .leftJoinAndSelect('ejercicio.tipo', 'tipo')
+      .leftJoinAndSelect('ejercicio.maquina', 'maquina')
+      .getMany();
+
+    return ejercicios.map((ejercicio) => this.toResponse(ejercicio));
   }
 
   async findOne(id: string) {
-    return this.ejercicioRepository.findOne({ where: { ejercicioId: id } });
+    const ejercicio = await this.ejercicioRepository
+      .createQueryBuilder('ejercicio')
+      .leftJoinAndSelect('ejercicio.categoria', 'categoria')
+      .leftJoinAndSelect('ejercicio.tipo', 'tipo')
+      .leftJoinAndSelect('ejercicio.maquina', 'maquina')
+      .where('ejercicio.ejercicioId = :id', { id })
+      .getOne();
+
+    return ejercicio ? this.toResponse(ejercicio) : null;
   }
 
   async update(
@@ -167,7 +183,8 @@ export class EjercicioService {
     ejercicio.linkVideo = linkVideoActual;
     ejercicio.linkAM = linkAMActual;
 
-    return this.ejercicioRepository.save(ejercicio);
+    const savedEjercicio = await this.ejercicioRepository.save(ejercicio);
+    return this.findOne(savedEjercicio.ejercicioId);
   }
 
   async remove(id: string) {
@@ -199,5 +216,34 @@ export class EjercicioService {
     }
 
     return options.currentValue;
+  }
+
+  private toResponse(ejercicio: Ejercicio) {
+    return {
+      ejercicioId: ejercicio.ejercicioId,
+      nombre: ejercicio.nombre,
+      linkVideo: ejercicio.linkVideo,
+      linkAM: ejercicio.linkAM,
+      categoria: ejercicio.categoria
+        ? {
+            categoriaId: ejercicio.categoria.categoriaId,
+            nombre: ejercicio.categoria.nombre,
+          }
+        : null,
+      tipo: ejercicio.tipo
+        ? {
+            tipoId: ejercicio.tipo.tipoId,
+            nombre: ejercicio.tipo.nombre,
+          }
+        : null,
+      maquina: ejercicio.maquina
+        ? {
+            maquinaId: ejercicio.maquina.maquinaId,
+            nombre: ejercicio.maquina.nombre,
+            numeroMaquina: ejercicio.maquina.numeroMaquina,
+            linkFoto: ejercicio.maquina.linkFoto,
+          }
+        : null,
+    };
   }
 }

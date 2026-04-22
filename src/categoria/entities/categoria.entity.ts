@@ -10,6 +10,6 @@ export class Categoria {
     @Column()
     nombre: string;
 
-    @OneToMany(() => Ejercicio, ejercicio => ejercicio.tipo)
+    @OneToMany(() => Ejercicio, ejercicio => ejercicio.categoria)
     ejercicios: Ejercicio[];
 }

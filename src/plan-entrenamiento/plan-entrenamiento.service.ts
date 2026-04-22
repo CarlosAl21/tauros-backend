@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePlanEntrenamientoDto } from './dto/create-plan-entrenamiento.dto';
 import { UpdatePlanEntrenamientoDto } from './dto/update-plan-entrenamiento.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,27 +25,61 @@ export class PlanEntrenamientoService {
     private readonly rutinaEjercicioRepository: Repository<RutinaEjercicio>,
   ) {}
 
+  private readonly planRelations = [
+    'usuario',
+    'rutinasDia',
+    'rutinasDia.rutinasEjercicio',
+    'rutinasDia.rutinasEjercicio.ejercicio',
+  ] as const;
+
   async create(createPlanEntrenamientoDto: CreatePlanEntrenamientoDto) {
+    const duracionDias = Number(createPlanEntrenamientoDto.duracionDias);
+    if (!Number.isInteger(duracionDias) || duracionDias < 1) {
+      throw new BadRequestException('duracionDias debe ser un numero entero mayor a cero');
+    }
+
     const planEntrenamiento = this.planEntrenamientoRepository.create({
       nombre: createPlanEntrenamientoDto.nombre,
       descripcion: createPlanEntrenamientoDto.descripcion,
+      duracionDias,
+      objetivo: createPlanEntrenamientoDto.objetivo,
       usuario: createPlanEntrenamientoDto.usuarioId ? await this.usuarioRepository.findOne({ where: { userId: createPlanEntrenamientoDto.usuarioId } }) : null,
     });
-    return this.planEntrenamientoRepository.save(planEntrenamiento);
+
+    const savedPlan = await this.planEntrenamientoRepository.save(planEntrenamiento);
+    return this.findOne(savedPlan.planEntrenamientoId);
   }
 
   async findAll() {
-    return this.planEntrenamientoRepository.find();
+    return this.planEntrenamientoRepository.find({
+      relations: [...this.planRelations],
+      order: {
+        nombre: 'ASC',
+      },
+    });
   }
 
   async findOne(id: string) {
-    return this.planEntrenamientoRepository.findOne({ where: { planEntrenamientoId: id } });
+    return this.planEntrenamientoRepository.findOne({
+      where: { planEntrenamientoId: id },
+      relations: [...this.planRelations],
+    });
   }
 
   async update(id: string, updatePlanEntrenamientoDto: UpdatePlanEntrenamientoDto) {
+    const duracionDias = updatePlanEntrenamientoDto.duracionDias === undefined
+      ? undefined
+      : Number(updatePlanEntrenamientoDto.duracionDias);
+
+    if (duracionDias !== undefined && (!Number.isInteger(duracionDias) || duracionDias < 1)) {
+      throw new BadRequestException('duracionDias debe ser un numero entero mayor a cero');
+    }
+
     await this.planEntrenamientoRepository.update(id, {
       nombre: updatePlanEntrenamientoDto.nombre,
       descripcion: updatePlanEntrenamientoDto.descripcion,
+      ...(duracionDias !== undefined ? { duracionDias } : {}),
+      objetivo: updatePlanEntrenamientoDto.objetivo,
       usuario: updatePlanEntrenamientoDto.usuarioId ? await this.usuarioRepository.findOne({ where: { userId: updatePlanEntrenamientoDto.usuarioId } }) : null,
     });
     return this.findOne(id);
@@ -108,7 +142,7 @@ export class PlanEntrenamientoService {
 
     return this.planEntrenamientoRepository.findOne({
       where: { planEntrenamientoId: planGuardado.planEntrenamientoId },
-      relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio'],
+      relations: [...this.planRelations],
     });
   }
 

@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { Type } from 'class-transformer';
+import { IsInt, IsNotEmpty, IsOptional, Min, IsString } from 'class-validator';
 
 export class CreatePlanEntrenamientoDto {
 
@@ -10,8 +11,9 @@ export class CreatePlanEntrenamientoDto {
     @IsNotEmpty()
     descripcion: string;
 
-    @IsNumber()
-    @IsNotEmpty()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
     duracionDias: number;
 
     @IsString()
