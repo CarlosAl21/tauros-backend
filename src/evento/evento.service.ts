@@ -16,6 +16,44 @@ export class EventoService {
     private readonly usuarioRepository: Repository<Usuario>,
   ) {}
 
+  private sanitizeEvento(evento: Evento | null) {
+    if (!evento) {
+      return null;
+    }
+
+    const participantes = Array.isArray(evento.participantes)
+      ? evento.participantes.map((usuario) => ({
+          userId: usuario.userId,
+          cedula: usuario.cedula,
+          nombre: usuario.nombre,
+          apellido: usuario.apellido,
+          correo: usuario.correo,
+          telefono: usuario.telefono,
+          rol: usuario.rol,
+          isActive: usuario.isActive,
+        }))
+      : [];
+
+    return {
+      ...evento,
+      participantes,
+      numParticipantes: participantes.length,
+    };
+  }
+
+  private async deactivateExpiredEvents() {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    await this.eventoRepository
+      .createQueryBuilder()
+      .update(Evento)
+      .set({ activo: false })
+      .where('activo = :activo', { activo: true })
+      .andWhere('fechaHora < :startOfToday', { startOfToday })
+      .execute();
+  }
+
   async create(createEventoDto: CreateEventoDto) {
     const evento = this.eventoRepository.create({
       nombre: createEventoDto.nombre,
@@ -25,22 +63,43 @@ export class EventoService {
       participantes: [],
     });
 
-    return this.eventoRepository.save(evento);
+    await this.eventoRepository.save(evento);
+    return this.findOne(evento.eventoId);
   }
 
   async findAll() {
-    return this.eventoRepository.find();
+    await this.deactivateExpiredEvents();
+    const eventos = await this.eventoRepository.find({
+      relations: ['participantes'],
+      order: {
+        fechaHora: 'ASC',
+      },
+    });
+
+    return eventos.map((evento) => this.sanitizeEvento(evento));
   }
 
   async findActivos() {
-    return this.eventoRepository.find({ where: { activo: true } });
+    await this.deactivateExpiredEvents();
+    const eventos = await this.eventoRepository.find({
+      where: { activo: true },
+      relations: ['participantes'],
+      order: {
+        fechaHora: 'ASC',
+      },
+    });
+
+    return eventos.map((evento) => this.sanitizeEvento(evento));
   }
 
   async findOne(id: string) {
-    return this.eventoRepository.findOne({
+    await this.deactivateExpiredEvents();
+    const evento = await this.eventoRepository.findOne({
       where: { eventoId: id},
       relations: ['participantes'],
     });
+
+    return this.sanitizeEvento(evento);
   }
 
   async update(id: string, updateEventoDto: UpdateEventoDto) {
@@ -54,10 +113,13 @@ export class EventoService {
       throw new Error('Evento not found');
     }
     evento.activo = false; // marcar como inactivo en lugar de eliminar
-    return this.eventoRepository.save(evento);
+    await this.eventoRepository.save(evento);
+    return this.findOne(id);
   }
 
   async registrarParticipante(eventoId: string, usuarioId: string) {
+    await this.deactivateExpiredEvents();
+
     const evento = await this.eventoRepository.findOne({
       where: { eventoId, activo: true },
       relations: ['participantes'],

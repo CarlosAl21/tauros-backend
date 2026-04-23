@@ -3,15 +3,19 @@ import { CreatePlanEntrenamientoDto } from './dto/create-plan-entrenamiento.dto'
 import { UpdatePlanEntrenamientoDto } from './dto/update-plan-entrenamiento.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PlanEntrenamiento } from './entities/plan-entrenamiento.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { RutinaDia } from 'src/rutina-dia/entities/rutina-dia.entity';
 import { RutinaEjercicio } from 'src/rutina-ejercicio/entities/rutina-ejercicio.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @Injectable()
 export class PlanEntrenamientoService {
 
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+
     @InjectRepository(PlanEntrenamiento)
     private readonly planEntrenamientoRepository: Repository<PlanEntrenamiento>,
 
@@ -24,6 +28,19 @@ export class PlanEntrenamientoService {
     @InjectRepository(RutinaEjercicio)
     private readonly rutinaEjercicioRepository: Repository<RutinaEjercicio>,
   ) {}
+
+  private buildDayName(dayNumber: number) {
+    let value = dayNumber;
+    let label = '';
+
+    while (value > 0) {
+      value -= 1;
+      label = String.fromCharCode(65 + (value % 26)) + label;
+      value = Math.floor(value / 26);
+    }
+
+    return label;
+  }
 
   private readonly planRelations = [
     'usuario',
@@ -38,16 +55,35 @@ export class PlanEntrenamientoService {
       throw new BadRequestException('duracionDias debe ser un numero entero mayor a cero');
     }
 
-    const planEntrenamiento = this.planEntrenamientoRepository.create({
-      nombre: createPlanEntrenamientoDto.nombre,
-      descripcion: createPlanEntrenamientoDto.descripcion,
-      duracionDias,
-      objetivo: createPlanEntrenamientoDto.objetivo,
-      usuario: createPlanEntrenamientoDto.usuarioId ? await this.usuarioRepository.findOne({ where: { userId: createPlanEntrenamientoDto.usuarioId } }) : null,
+    let savedPlanId = '';
+
+    await this.dataSource.transaction(async (manager) => {
+      const planRepository = manager.getRepository(PlanEntrenamiento);
+      const rutinaDiaRepository = manager.getRepository(RutinaDia);
+
+      const planEntrenamiento = planRepository.create({
+        nombre: createPlanEntrenamientoDto.nombre,
+        descripcion: createPlanEntrenamientoDto.descripcion,
+        duracionDias,
+        objetivo: createPlanEntrenamientoDto.objetivo,
+        esPlantilla: true,
+        usuario: null,
+      });
+
+      const savedPlan = await planRepository.save(planEntrenamiento);
+
+      const rutinaDias = Array.from({ length: duracionDias }, (_, index) => rutinaDiaRepository.create({
+        numeroDia: index + 1,
+        nombre: this.buildDayName(index + 1),
+        descripcion: `Dia ${index + 1}`,
+        planEntrenamiento: savedPlan,
+      }));
+
+      await rutinaDiaRepository.save(rutinaDias);
+      savedPlanId = savedPlan.planEntrenamientoId;
     });
 
-    const savedPlan = await this.planEntrenamientoRepository.save(planEntrenamiento);
-    return this.findOne(savedPlan.planEntrenamientoId);
+    return this.findOne(savedPlanId);
   }
 
   async findAll() {
@@ -55,6 +91,12 @@ export class PlanEntrenamientoService {
       relations: [...this.planRelations],
       order: {
         nombre: 'ASC',
+        rutinasDia: {
+          numeroDia: 'ASC',
+          rutinasEjercicio: {
+            orden: 'ASC',
+          },
+        },
       },
     });
   }
@@ -63,6 +105,14 @@ export class PlanEntrenamientoService {
     return this.planEntrenamientoRepository.findOne({
       where: { planEntrenamientoId: id },
       relations: [...this.planRelations],
+      order: {
+        rutinasDia: {
+          numeroDia: 'ASC',
+          rutinasEjercicio: {
+            orden: 'ASC',
+          },
+        },
+      },
     });
   }
 
@@ -86,11 +136,40 @@ export class PlanEntrenamientoService {
   }
 
   async remove(id: string) {
-    const planEntrenamiento = await this.planEntrenamientoRepository.findOne({ where: { planEntrenamientoId: id } });
-    if (!planEntrenamiento) {
-      throw new Error('Plan de entrenamiento not found');
-    }
-    return this.planEntrenamientoRepository.remove(planEntrenamiento);
+    return this.dataSource.transaction(async (manager) => {
+      const planRepository = manager.getRepository(PlanEntrenamiento);
+      const rutinaDiaRepository = manager.getRepository(RutinaDia);
+      const rutinaEjercicioRepository = manager.getRepository(RutinaEjercicio);
+
+      const planEntrenamiento = await planRepository.findOne({ where: { planEntrenamientoId: id } });
+      if (!planEntrenamiento) {
+        throw new Error('Plan de entrenamiento not found');
+      }
+
+      const rutinaDiaIdsSubquery = rutinaDiaRepository
+        .createQueryBuilder('rutinaDia')
+        .select('rutinaDia.rutinaDiaId')
+        .where('rutinaDia.planEntrenamientoId = :id', { id });
+
+      await rutinaEjercicioRepository
+        .createQueryBuilder()
+        .delete()
+        .from(RutinaEjercicio)
+        .where(`rutinaDiaId IN (${rutinaDiaIdsSubquery.getQuery()})`)
+        .setParameters(rutinaDiaIdsSubquery.getParameters())
+        .execute();
+
+      await rutinaDiaRepository
+        .createQueryBuilder()
+        .delete()
+        .from(RutinaDia)
+        .where('planEntrenamientoId = :id', { id })
+        .execute();
+
+      await planRepository.delete({ planEntrenamientoId: id });
+
+      return { deleted: true };
+    });
   }
 
   async asignarPlan(planEntrenamientoId: string, usuarioId: string) {

@@ -40,11 +40,28 @@ export class RutinaDiaService {
   }
 
   async update(id: string, updateRutinaDiaDto: UpdateRutinaDiaDto) {
-    const planEntrenamiento = await this.planEntrenamientoRepository.findOne({ where: { planEntrenamientoId: updateRutinaDiaDto.planEntrenamientoId } });
-    if (!planEntrenamiento) {
-      throw new Error('PlanEntrenamiento not found');
+    const rutinaDia = await this.rutinaDiaRepository.findOne({
+      where: { rutinaDiaId: id },
+      relations: ['planEntrenamiento'],
+    });
+
+    if (!rutinaDia) {
+      throw new Error('RutinaDia not found');
     }
-    await this.rutinaDiaRepository.update({ rutinaDiaId: id }, { ...updateRutinaDiaDto, planEntrenamiento });
+
+    const { planEntrenamientoId, ...camposActualizables } = updateRutinaDiaDto;
+
+    if (planEntrenamientoId) {
+      const planEntrenamiento = await this.planEntrenamientoRepository.findOne({ where: { planEntrenamientoId } });
+      if (!planEntrenamiento) {
+        throw new Error('PlanEntrenamiento not found');
+      }
+      rutinaDia.planEntrenamiento = planEntrenamiento;
+    }
+
+    Object.assign(rutinaDia, camposActualizables);
+
+    await this.rutinaDiaRepository.save(rutinaDia);
     return this.findOne(id);
   }
 

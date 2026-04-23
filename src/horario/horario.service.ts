@@ -13,13 +13,103 @@ export class HorarioService {
     private readonly horarioRepository: Repository<Horario>,
   ) {}
 
+  private normalizeDay(day: string) {
+    const value = String(day || '').trim();
+    if (!value) {
+      return '';
+    }
+
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  }
+
+  private dayOrder(day: string) {
+    const order = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
+    const index = order.indexOf(this.normalizeDay(day));
+    return index >= 0 ? index : 999;
+  }
+
   async create(createHorarioDto: CreateHorarioDto) {
-    const horario = this.horarioRepository.create(createHorarioDto);
+    const horariosPorDia = Array.isArray(createHorarioDto.horariosPorDia)
+      ? createHorarioDto.horariosPorDia
+      : [];
+
+    if (horariosPorDia.length) {
+      const saved: Horario[] = [];
+
+      for (const item of horariosPorDia) {
+        const dia = this.normalizeDay(item.diaSemana);
+        if (!dia) {
+          continue;
+        }
+
+        const apertura = item.apertura || createHorarioDto.apertura;
+        const cierre = item.cierre || createHorarioDto.cierre;
+
+        if (!apertura || !cierre) {
+          continue;
+        }
+
+        const existing = await this.horarioRepository.findOne({ where: { diasSemanales: dia } });
+        if (existing) {
+          existing.apertura = apertura;
+          existing.cierre = cierre;
+          saved.push(await this.horarioRepository.save(existing));
+          continue;
+        }
+
+        const created = this.horarioRepository.create({
+          diasSemanales: dia,
+          apertura,
+          cierre,
+        });
+        saved.push(await this.horarioRepository.save(created));
+      }
+
+      return saved.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
+    }
+
+    const diasSeleccionados = Array.isArray(createHorarioDto.diasSeleccionados)
+      ? createHorarioDto.diasSeleccionados
+      : [];
+
+    if (diasSeleccionados.length) {
+      const saved: Horario[] = [];
+      for (const diaRaw of diasSeleccionados) {
+        const dia = this.normalizeDay(diaRaw);
+        if (!dia || !createHorarioDto.apertura || !createHorarioDto.cierre) {
+          continue;
+        }
+
+        const existing = await this.horarioRepository.findOne({ where: { diasSemanales: dia } });
+        if (existing) {
+          existing.apertura = createHorarioDto.apertura;
+          existing.cierre = createHorarioDto.cierre;
+          saved.push(await this.horarioRepository.save(existing));
+          continue;
+        }
+
+        const created = this.horarioRepository.create({
+          diasSemanales: dia,
+          apertura: createHorarioDto.apertura,
+          cierre: createHorarioDto.cierre,
+        });
+        saved.push(await this.horarioRepository.save(created));
+      }
+
+      return saved.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
+    }
+
+    const horario = this.horarioRepository.create({
+      apertura: createHorarioDto.apertura,
+      cierre: createHorarioDto.cierre,
+      diasSemanales: this.normalizeDay(createHorarioDto.diasSemanales),
+    });
     return this.horarioRepository.save(horario);
   }
 
   async findAll() {
-    return this.horarioRepository.find();
+    const horarios = await this.horarioRepository.find();
+    return horarios.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
   }
 
   async findOne(id: string) {

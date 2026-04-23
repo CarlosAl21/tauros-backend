@@ -1,7 +1,11 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { Type } from 'class-transformer';
 
-export class CreateHorarioDto {
-    
+class HorarioPorDiaDto {
+    @IsString()
+    @IsNotEmpty()
+    diaSemana: string;
+
     @IsString()
     @IsNotEmpty()
     apertura: string;
@@ -9,8 +13,30 @@ export class CreateHorarioDto {
     @IsString()
     @IsNotEmpty()
     cierre: string;
+}
 
+export class CreateHorarioDto {
+    
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
+    apertura: string;
+
+    @IsOptional()
+    @IsString()
+    cierre: string;
+
+    @IsOptional()
+    @IsString()
     diasSemanales: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    diasSeleccionados?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => HorarioPorDiaDto)
+    horariosPorDia?: HorarioPorDiaDto[];
 }

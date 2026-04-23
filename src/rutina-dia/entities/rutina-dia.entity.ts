@@ -17,7 +17,7 @@ export class RutinaDia {
     @Column()
     descripcion: string;
 
-    @ManyToOne(() => PlanEntrenamiento, planEntrenamiento => planEntrenamiento.rutinasDia, { nullable: true })
+    @ManyToOne(() => PlanEntrenamiento, planEntrenamiento => planEntrenamiento.rutinasDia, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'planEntrenamientoId' })
     planEntrenamiento: PlanEntrenamiento;
 
