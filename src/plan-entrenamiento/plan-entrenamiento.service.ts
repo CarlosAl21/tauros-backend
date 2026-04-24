@@ -117,6 +117,10 @@ export class PlanEntrenamientoService {
   }
 
   async update(id: string, updatePlanEntrenamientoDto: UpdatePlanEntrenamientoDto) {
+    if (updatePlanEntrenamientoDto.usuarioId) {
+      return this.asignarPlan(id, updatePlanEntrenamientoDto.usuarioId);
+    }
+
     const duracionDias = updatePlanEntrenamientoDto.duracionDias === undefined
       ? undefined
       : Number(updatePlanEntrenamientoDto.duracionDias);
@@ -130,7 +134,7 @@ export class PlanEntrenamientoService {
       descripcion: updatePlanEntrenamientoDto.descripcion,
       ...(duracionDias !== undefined ? { duracionDias } : {}),
       objetivo: updatePlanEntrenamientoDto.objetivo,
-      usuario: updatePlanEntrenamientoDto.usuarioId ? await this.usuarioRepository.findOne({ where: { userId: updatePlanEntrenamientoDto.usuarioId } }) : null,
+      usuario: null,
     });
     return this.findOne(id);
   }

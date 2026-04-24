@@ -26,6 +26,12 @@ export class UsuarioController {
     return this.usuarioService.findAll();
   }
 
+  @Get(':id/detalle')
+  @Roles(Rol.ADMIN, Rol.COACH)
+  findDetalleRutinas(@Param('id') id: string) {
+    return this.usuarioService.findDetalleRutinas(id);
+  }
+
   @Get(':id')
   @Roles(Rol.ADMIN, Rol.COACH)
   findOne(@Param('id') id: string) {
