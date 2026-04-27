@@ -229,4 +229,67 @@ export class PlanEntrenamientoService {
     });
   }
 
+  async obtenerEstadisticas() {
+    // Ejercicios más comunes
+    const ejerciciosMasComunes = await this.rutinaEjercicioRepository
+      .createQueryBuilder('re')
+      .select('e.ejercicioId', 'id')
+      .addSelect('e.nombre', 'nombre')
+      .addSelect('COUNT(re.rutinaEjercicioId)', 'cantidad')
+      .innerJoin('re.ejercicio', 'e')
+      .groupBy('e.ejercicioId')
+      .addGroupBy('e.nombre')
+      .orderBy('cantidad', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    // Categorías más comunes
+    const categoriasPopulares = await this.rutinaEjercicioRepository
+      .createQueryBuilder('re')
+      .select('c.categoriaId', 'id')
+      .addSelect('c.nombre', 'nombre')
+      .addSelect('COUNT(re.rutinaEjercicioId)', 'cantidad')
+      .innerJoin('re.ejercicio', 'e')
+      .innerJoin('e.categoria', 'c')
+      .groupBy('c.categoriaId')
+      .addGroupBy('c.nombre')
+      .orderBy('cantidad', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    // Tipos de ejercicio más comunes
+    const tiposPopulares = await this.rutinaEjercicioRepository
+      .createQueryBuilder('re')
+      .select('t.tipoId', 'id')
+      .addSelect('t.nombre', 'nombre')
+      .addSelect('COUNT(re.rutinaEjercicioId)', 'cantidad')
+      .innerJoin('re.ejercicio', 'e')
+      .innerJoin('e.tipo', 't')
+      .groupBy('t.tipoId')
+      .addGroupBy('t.nombre')
+      .orderBy('cantidad', 'DESC')
+      .limit(10)
+      .getRawMany();
+
+    // Estadísticas de completadas
+    const totalEjercicios = await this.rutinaEjercicioRepository.count();
+    const ejerciciosCompletados = await this.rutinaEjercicioRepository.count({
+      where: { completada: true },
+    });
+    const porcentajeCompletado = totalEjercicios > 0 
+      ? Math.round((ejerciciosCompletados / totalEjercicios) * 100)
+      : 0;
+
+    return {
+      ejerciciosMasComunes,
+      categoriasPopulares,
+      tiposPopulares,
+      estadisticasCompletadas: {
+        total: totalEjercicios,
+        completados: ejerciciosCompletados,
+        porcentaje: porcentajeCompletado,
+      },
+    };
+  }
+
 }

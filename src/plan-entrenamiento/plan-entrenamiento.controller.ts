@@ -26,6 +26,12 @@ export class PlanEntrenamientoController {
     return this.planEntrenamientoService.findAll();
   }
 
+  @Get('estadisticas/ejercicios')
+  @Roles(Rol.ADMIN, Rol.COACH)
+  obtenerEstadisticas() {
+    return this.planEntrenamientoService.obtenerEstadisticas();
+  }
+
   @Get(':id')
   @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
   findOne(@Param('id') id: string) {

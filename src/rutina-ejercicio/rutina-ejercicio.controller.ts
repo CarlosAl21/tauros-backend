@@ -43,4 +43,10 @@ export class RutinaEjercicioController {
   remove(@Param('id') id: string) {
     return this.rutinaEjercicioService.remove(id);
   }
+
+  @Patch(':id/completada')
+  @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
+  marcarCompletada(@Param('id') id: string) {
+    return this.rutinaEjercicioService.marcarCompletada(id);
+  }
 }

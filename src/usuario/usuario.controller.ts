@@ -32,6 +32,12 @@ export class UsuarioController {
     return this.usuarioService.findDetalleRutinas(id);
   }
 
+  @Get(':id/estadisticas')
+  @Roles(Rol.ADMIN, Rol.COACH)
+  obtenerEstadisticas(@Param('id') id: string) {
+    return this.usuarioService.obtenerEstadisticasUsuario(id);
+  }
+
   @Get(':id')
   @Roles(Rol.ADMIN, Rol.COACH)
   findOne(@Param('id') id: string) {

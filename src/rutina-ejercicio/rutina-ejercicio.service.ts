@@ -85,4 +85,16 @@ export class RutinaEjercicioService {
   async remove(id: string) {
     return this.rutinaEjercicioRepository.delete(id);
   }
+
+  async marcarCompletada(id: string) {
+    const rutinaEjercicio = await this.rutinaEjercicioRepository.findOne({ where: { rutinaEjercicioId: id } });
+    if (!rutinaEjercicio) {
+      throw new Error('RutinaEjercicio not found');
+    }
+
+    rutinaEjercicio.completada = !rutinaEjercicio.completada;
+    rutinaEjercicio.fechaCompletada = rutinaEjercicio.completada ? new Date() : null;
+
+    return this.rutinaEjercicioRepository.save(rutinaEjercicio);
+  }
 }

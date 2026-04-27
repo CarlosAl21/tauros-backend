@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Rol, Usuario } from './entities/usuario.entity';
 import { Repository } from 'typeorm';
 import { PlanEntrenamiento } from 'src/plan-entrenamiento/entities/plan-entrenamiento.entity';
+import { RutinaEjercicio } from 'src/rutina-ejercicio/entities/rutina-ejercicio.entity';
+import { Ejercicio } from 'src/ejercicio/entities/ejercicio.entity';
 
 @Injectable()
 export class UsuarioService {
@@ -13,6 +15,10 @@ export class UsuarioService {
     private readonly usuarioRepository: Repository<Usuario>,
     @InjectRepository(PlanEntrenamiento)
     private readonly planEntrenamientoRepository: Repository<PlanEntrenamiento>,
+    @InjectRepository(RutinaEjercicio)
+    private readonly rutinaEjercicioRepository: Repository<RutinaEjercicio>,
+    @InjectRepository(Ejercicio)
+    private readonly ejercicioRepository: Repository<Ejercicio>,
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto, currentRole?: Rol) {
@@ -184,6 +190,111 @@ export class UsuarioService {
       return { message: `Usuario con ID ${id} eliminado correctamente` };
     } catch (error) {
       console.error('Error eliminando usuario:', error);
+    }
+  }
+
+  async obtenerEstadisticasUsuario(userId: string) {
+    try {
+      const usuario = await this.usuarioRepository.findOne({
+        where: { userId },
+      });
+
+      if (!usuario) {
+        return null;
+      }
+
+      // Obtener todos los planes asignados del usuario
+      const planesAsignados = await this.planEntrenamientoRepository.find({
+        where: {
+          usuario: { userId },
+          esPlantilla: false,
+        },
+        relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio', 'rutinasDia.rutinasEjercicio.ejercicio.categoria'],
+      });
+
+      // Obtener todos los rutinaEjercicio del usuario
+      const planIds = planesAsignados.map(p => p.planEntrenamientoId);
+      
+      let ejerciciosUsuario = [];
+      if (planIds.length > 0) {
+        ejerciciosUsuario = await this.rutinaEjercicioRepository
+          .createQueryBuilder('re')
+          .innerJoinAndSelect('re.ejercicio', 'e')
+          .innerJoinAndSelect('e.categoria', 'c')
+          .innerJoinAndSelect('re.rutinaDia', 'rd')
+          .innerJoin('rd.planEntrenamiento', 'p')
+          .where('p.planEntrenamientoId IN (:...planIds)', { planIds })
+          .getMany();
+      }
+
+      // Ejercicios más frecuentes
+      const ejerciciosFrequencia = new Map();
+      ejerciciosUsuario.forEach((re) => {
+        const eId = re.ejercicio.ejercicioId;
+        if (!ejerciciosFrequencia.has(eId)) {
+          ejerciciosFrequencia.set(eId, {
+            id: eId,
+            nombre: re.ejercicio.nombre,
+            cantidad: 0,
+            completadas: 0,
+          });
+        }
+        const current = ejerciciosFrequencia.get(eId);
+        current.cantidad += 1;
+        if (re.completada) {
+          current.completadas += 1;
+        }
+      });
+
+      const ejerciciosMasHechos = Array.from(ejerciciosFrequencia.values())
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .slice(0, 10);
+
+      // Categorías favoritas
+      const categoriasMap = new Map();
+      ejerciciosUsuario.forEach((re) => {
+        const catId = re.ejercicio.categoria.categoriaId;
+        if (!categoriasMap.has(catId)) {
+          categoriasMap.set(catId, {
+            id: catId,
+            nombre: re.ejercicio.categoria.nombre,
+            cantidad: 0,
+          });
+        }
+        categoriasMap.get(catId).cantidad += 1;
+      });
+
+      const categoriasFavoritas = Array.from(categoriasMap.values())
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .slice(0, 5);
+
+      // Estadísticas de completadas
+      const totalEjercicios = ejerciciosUsuario.length;
+      const completadas = ejerciciosUsuario.filter(e => e.completada).length;
+      const pendientes = totalEjercicios - completadas;
+      const porcentajeCompletado = totalEjercicios > 0 
+        ? Math.round((completadas / totalEjercicios) * 100)
+        : 0;
+
+      return {
+        usuario: {
+          userId: usuario.userId,
+          nombre: usuario.nombre,
+          apellido: usuario.apellido,
+        },
+        planesActivos: planesAsignados.length,
+        ejerciciosFrequencia: ejerciciosMasHechos,
+        categoriasFavoritas,
+        estadisticas: {
+          total: totalEjercicios,
+          completadas,
+          pendientes,
+          porcentaje: porcentajeCompletado,
+        },
+      };
+    } catch (error) {
+      console.error('Error obteniendo estadísticas del usuario:', error);
+      return null;
     }
   }
 }

@@ -23,6 +23,12 @@ export class RutinaEjercicio {
     @Column()
     notasEspecificas: string;
 
+    @Column({ default: false })
+    completada: boolean;
+
+    @Column({ nullable: true })
+    fechaCompletada: Date;
+
     @ManyToOne(() => RutinaDia, rutinaDia => rutinaDia.rutinasEjercicio, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'rutinaDiaId' })
     rutinaDia: RutinaDia;
