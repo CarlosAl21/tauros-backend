@@ -33,6 +33,7 @@ import { AuthModule } from './auth/auth.module';
         const extensionSchema = configService.get('DB_EXTENSION_SCHEMA', appSchema);
         const quoteSchema = (schema: string) => `"${schema.replace(/"/g, '""')}"`;
         const searchPath = `${quoteSchema(appSchema)},${quoteSchema(extensionSchema)},public`;
+        const useSsl = configService.get('DB_SSL', configService.get('RENDER') ? 'true' : 'false') === 'true';
 
         return {
           type: 'postgres',
@@ -47,6 +48,7 @@ import { AuthModule } from './auth/auth.module';
             max: 15,
             idleTimeoutMillis: 30000,
           },
+          ssl: useSsl ? { rejectUnauthorized: false } : false,
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get('NODE_ENV', 'development') === 'development',
           logging: configService.get('NODE_ENV') === 'development',

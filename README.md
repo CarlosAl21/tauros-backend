@@ -20,10 +20,13 @@ DB_PASSWORD=tu_password
 DB_NAME=TaurosGym
 DB_SCHEMA=taurosBD
 DB_EXTENSION_SCHEMA=taurosBD
+DB_SSL=true
 JWT_SECRET=tu_jwt_secret
 JWT_EXPIRATION=24h
 PORT=3000
 ```
+
+En Render, `DB_SSL` puede omitirse porque la app lo activa automaticamente al detectar el entorno.
 
 ## Instalacion y ejecucion
 
