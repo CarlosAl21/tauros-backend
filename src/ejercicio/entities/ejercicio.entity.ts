@@ -19,6 +19,9 @@ export class Ejercicio {
     @Column()
     linkAM: string;
 
+    @Column({ default: true })
+    isActive: boolean;
+
     @ManyToOne(() => Categoria, categoria => categoria.ejercicios)
     @JoinColumn({ name: 'categoriaId' })
     categoria: Categoria;

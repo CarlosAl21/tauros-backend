@@ -97,6 +97,7 @@ export class UsuarioService {
         },
         relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio'],
         order: {
+          createdAt: 'DESC',
           nombre: 'ASC',
           rutinasDia: {
             numeroDia: 'ASC',
@@ -111,6 +112,7 @@ export class UsuarioService {
         (plan.rutinasDia || []).map((rutina) => ({
           planEntrenamientoId: plan.planEntrenamientoId,
           planNombre: plan.nombre,
+          planCreatedAt: plan.createdAt,
           rutinaDiaId: rutina.rutinaDiaId,
           numeroDia: rutina.numeroDia,
           nombre: rutina.nombre,
@@ -215,6 +217,15 @@ export class UsuarioService {
           esPlantilla: false,
         },
         relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio', 'rutinasDia.rutinasEjercicio.ejercicio.categoria'],
+        order: {
+          createdAt: 'DESC',
+          rutinasDia: {
+            numeroDia: 'ASC',
+            rutinasEjercicio: {
+              orden: 'ASC',
+            },
+          },
+        },
       });
 
       // Obtener todos los rutinaEjercicio del usuario

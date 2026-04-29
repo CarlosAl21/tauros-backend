@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, BadRequestException } from '@nestjs/common';
 import { ComposicionCorporalService } from './composicion-corporal.service';
 import { CreateComposicionCorporalDto } from './dto/create-composicion-corporal.dto';
 import { UpdateComposicionCorporalDto } from './dto/update-composicion-corporal.dto';
@@ -15,8 +15,16 @@ export class ComposicionCorporalController {
   constructor(private readonly composicionCorporalService: ComposicionCorporalService) {}
 
   @Post()
-  @Roles(Rol.ADMIN, Rol.COACH)
-  create(@Body() createComposicionCorporalDto: CreateComposicionCorporalDto) {
+  @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
+  create(@Req() req: { user?: { userId?: string; rol?: Rol } }, @Body() createComposicionCorporalDto: CreateComposicionCorporalDto) {
+    if ((req.user?.rol === Rol.ADMIN || req.user?.rol === Rol.COACH) && !createComposicionCorporalDto.usuarioId) {
+      throw new BadRequestException('Debes indicar el usuario al registrar la composicion corporal');
+    }
+
+    if (req.user?.rol === Rol.USER) {
+      createComposicionCorporalDto.usuarioId = req.user.userId;
+    }
+
     return this.composicionCorporalService.create(createComposicionCorporalDto);
   }
 

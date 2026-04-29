@@ -1,6 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary } from 'cloudinary';
+import { createHash } from 'crypto';
+
+type CloudinaryUploadSignatureOptions = {
+  folder: string;
+  resourceType: 'image' | 'video';
+};
+
+type CloudinaryUploadSignatureResponse = {
+  cloudName: string;
+  apiKey: string;
+  folder: string;
+  resourceType: 'image' | 'video';
+  timestamp: number;
+  signature: string;
+  uploadUrl: string;
+};
 
 @Injectable()
 export class CloudinaryService {
@@ -45,5 +61,38 @@ export class CloudinaryService {
 
       uploadStream.end(file.buffer);
     });
+  }
+
+  createUploadSignature(options: CloudinaryUploadSignatureOptions): CloudinaryUploadSignatureResponse {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const cloudName = this.configService.getOrThrow<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.configService.getOrThrow<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.configService.getOrThrow<string>('CLOUDINARY_API_SECRET');
+    const signaturePayload = this.buildSignaturePayload({
+      folder: options.folder,
+      timestamp,
+    });
+
+    const signature = createHash('sha1')
+      .update(`${signaturePayload}${apiSecret}`)
+      .digest('hex');
+
+    return {
+      cloudName,
+      apiKey,
+      folder: options.folder,
+      resourceType: options.resourceType,
+      timestamp,
+      signature,
+      uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${options.resourceType}/upload`,
+    };
+  }
+
+  private buildSignaturePayload(values: Record<string, string | number>) {
+    return Object.entries(values)
+      .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
   }
 }

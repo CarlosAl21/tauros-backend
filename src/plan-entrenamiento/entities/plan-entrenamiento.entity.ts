@@ -1,6 +1,6 @@
 import { RutinaDia } from "src/rutina-dia/entities/rutina-dia.entity";
 import { Usuario } from "src/usuario/entities/usuario.entity";
-import { Column, Entity,JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class PlanEntrenamiento {
@@ -22,6 +22,9 @@ export class PlanEntrenamiento {
 
     @Column()
     objetivo: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
 
     @ManyToOne(() => Usuario, usuario => usuario.planesEntrenamiento, { nullable: true })
     @JoinColumn({ name: 'usuarioId' })

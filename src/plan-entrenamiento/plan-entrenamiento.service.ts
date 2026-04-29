@@ -91,6 +91,7 @@ export class PlanEntrenamientoService {
     return this.planEntrenamientoRepository.find({
       relations: [...this.planRelations],
       order: {
+        createdAt: 'DESC',
         nombre: 'ASC',
         rutinasDia: {
           numeroDia: 'ASC',
@@ -107,6 +108,7 @@ export class PlanEntrenamientoService {
       where: { planEntrenamientoId: id },
       relations: [...this.planRelations],
       order: {
+        createdAt: 'DESC',
         rutinasDia: {
           numeroDia: 'ASC',
           rutinasEjercicio: {
@@ -230,6 +232,15 @@ export class PlanEntrenamientoService {
     return this.planEntrenamientoRepository.findOne({
       where: { planEntrenamientoId: planGuardado.planEntrenamientoId },
       relations: [...this.planRelations],
+      order: {
+        createdAt: 'DESC',
+        rutinasDia: {
+          numeroDia: 'ASC',
+          rutinasEjercicio: {
+            orden: 'ASC',
+          },
+        },
+      },
     });
   }
 

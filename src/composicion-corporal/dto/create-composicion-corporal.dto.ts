@@ -23,6 +23,6 @@ export class CreateComposicionCorporalDto {
     grasaVisceral?: number;
 
     @IsString()
-    @IsNotEmpty()
-    usuarioId: string;
+    @IsOptional()
+    usuarioId?: string;
 }

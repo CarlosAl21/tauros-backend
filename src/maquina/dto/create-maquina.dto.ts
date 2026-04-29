@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateMaquinaDto {
 
@@ -15,5 +15,9 @@ export class CreateMaquinaDto {
     @IsNumber()
     @IsNotEmpty()
     numeroMaquina: number;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
     
 }

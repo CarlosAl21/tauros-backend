@@ -44,10 +44,12 @@ import { AuthModule } from './auth/auth.module';
           schema: appSchema,
           extra: {
             options: `-c search_path=${searchPath}`,
+            max: 15,
+            idleTimeoutMillis: 30000,
           },
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: configService.get('NODE_ENV', 'development') === 'development',
-          logging: false,
+          logging: false,//configService.get('NODE_ENV') === 'development',
         };
       },
     }),

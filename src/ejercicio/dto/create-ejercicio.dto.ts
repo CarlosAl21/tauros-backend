@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateEjercicioDto {
 
@@ -25,5 +25,9 @@ export class CreateEjercicioDto {
     @IsOptional()
     @IsString()
     maquinaId?: string | null;
+
+    @IsOptional()
+    @IsBoolean()
+    isActive?: boolean;
     
 }

@@ -16,6 +16,9 @@ export class Maquina {
     @Column()
     numeroMaquina: number;
 
+    @Column({ default: true })
+    isActive: boolean;
+
     @OneToMany(() => Ejercicio, ejercicio => ejercicio.maquina)
     ejercicios: Ejercicio[];
 
