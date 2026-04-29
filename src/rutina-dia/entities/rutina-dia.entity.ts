@@ -17,6 +17,15 @@ export class RutinaDia {
     @Column()
     descripcion: string;
 
+    @Column({ type: 'int', default: 60 })
+    descansoSegundos: number;
+
+    @Column({ default: false })
+    finalizada: boolean;
+
+    @Column({ nullable: true })
+    fechaFinalizada: Date;
+
     @ManyToOne(() => PlanEntrenamiento, planEntrenamiento => planEntrenamiento.rutinasDia, { nullable: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'planEntrenamientoId' })
     planEntrenamiento: PlanEntrenamiento;

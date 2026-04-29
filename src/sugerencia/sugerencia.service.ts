@@ -5,6 +5,8 @@ import { In, Repository } from 'typeorm';
 import { Evento } from 'src/evento/entities/evento.entity';
 import { Ejercicio } from 'src/ejercicio/entities/ejercicio.entity';
 import { RutinaDia } from 'src/rutina-dia/entities/rutina-dia.entity';
+import { CreateSugerenciaDto } from './dto/create-sugerencia.dto';
+import { UpdateSugerenciaDto } from './dto/update-sugerencia.dto';
 
 @Injectable()
 export class SugerenciaService {
@@ -20,11 +22,39 @@ export class SugerenciaService {
     private readonly rutinaDiaRepository: Repository<RutinaDia>,
   ) {}
 
-  async findAll(tipo?: string) {
+  async create(createSugerenciaDto: CreateSugerenciaDto) {
+    const tipoEntidadNormalizado = this.normalizarTipo(createSugerenciaDto.tipoEntidad) as tipoEntidad;
+
+    await this.sugerenciaRepository.save(this.sugerenciaRepository.create({
+      contenido: createSugerenciaDto.contenido.trim(),
+      tipoEntidad: tipoEntidadNormalizado,
+      entidadId: createSugerenciaDto.entidadId,
+    }));
+
+    return this.findAll(tipoEntidadNormalizado);
+  }
+
+  async updateEstado(sugerenciaId: string, updateSugerenciaDto: UpdateSugerenciaDto) {
+    const sugerencia = await this.sugerenciaRepository.findOne({ where: { sugerenciaId } });
+    if (!sugerencia) {
+      throw new BadRequestException('Sugerencia no encontrada');
+    }
+
+    sugerencia.solucionada = Boolean(updateSugerenciaDto.solucionada);
+    await this.sugerenciaRepository.save(sugerencia);
+
+    return this.findAll(undefined, undefined);
+  }
+
+  async findAll(tipo?: string, solucionada?: string) {
     const tipoNormalizado = this.normalizarTipo(tipo);
+    const estadoSolucionada = this.normalizarEstadoSolucionada(solucionada);
 
     const sugerencias = await this.sugerenciaRepository.find({
-      where: tipoNormalizado ? { tipoEntidad: tipoNormalizado } : {},
+      where: {
+        ...(tipoNormalizado ? { tipoEntidad: tipoNormalizado } : {}),
+        ...(estadoSolucionada === undefined ? {} : { solucionada: estadoSolucionada }),
+      },
     });
 
     if (sugerencias.length === 0) {
@@ -58,9 +88,11 @@ export class SugerenciaService {
     const ejerciciosPorId = new Map(ejercicios.map((ejercicio) => [ejercicio.ejercicioId, ejercicio.nombre]));
 
     return sugerencias.map((sugerencia) => ({
+      sugerenciaId: sugerencia.sugerenciaId,
       tipo: sugerencia.tipoEntidad,
       actividad: this.obtenerNombreActividad(sugerencia, eventosPorId, rutinasPorId, ejerciciosPorId),
       contenido: sugerencia.contenido,
+      solucionada: sugerencia.solucionada,
     }));
   }
 
@@ -76,6 +108,23 @@ export class SugerenciaService {
     }
 
     return tipoNormalizado;
+  }
+
+  private normalizarEstadoSolucionada(solucionada?: string): boolean | undefined {
+    if (solucionada === undefined || solucionada === null || solucionada === '') {
+      return undefined;
+    }
+
+    const valor = String(solucionada).trim().toLowerCase();
+    if (valor === 'true') {
+      return true;
+    }
+
+    if (valor === 'false') {
+      return false;
+    }
+
+    throw new BadRequestException('El parámetro solucionada debe ser true o false');
   }
 
   private obtenerNombreActividad(

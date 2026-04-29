@@ -1,9 +1,11 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Patch } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,11 +29,23 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {
-    return {
-      userId: req.user.userId,
-      username: req.user.username,
-      rol: req.user.rol,
-    };
+    return this.authService.getProfile(req.user.userId);
+  }
+
+  @Patch('profile')
+  @ApiBearerAuth('bearer')
+  @ApiOperation({ summary: 'Actualizar datos del usuario autenticado' })
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@Request() req, @Body() updateProfileDto: UpdateProfileDto) {
+    return this.authService.updateProfile(req.user.userId, updateProfileDto);
+  }
+
+  @Patch('change-password')
+  @ApiBearerAuth('bearer')
+  @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+  @UseGuards(JwtAuthGuard)
+  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.userId, changePasswordDto);
   }
 
   @Get('validate')

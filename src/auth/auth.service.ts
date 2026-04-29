@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { Usuario } from '../usuario/entities/usuario.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -105,5 +107,55 @@ export class AuthService {
     }
 
     return usuario;
+  }
+
+  async getProfile(userId: string) {
+    const usuario = await this.validateUser(userId);
+
+    return {
+      userId: usuario.userId,
+      correo: usuario.correo,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      rol: usuario.rol,
+    };
+  }
+
+  async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
+    const usuario = await this.validateUser(userId);
+
+    if (updateProfileDto.correo && updateProfileDto.correo !== usuario.correo) {
+      const existing = await this.usuarioRepository.findOne({ where: { correo: updateProfileDto.correo } });
+      if (existing && existing.userId !== userId) {
+        throw new ConflictException('El correo ya está registrado');
+      }
+      usuario.correo = updateProfileDto.correo;
+    }
+
+    if (updateProfileDto.nombre !== undefined) {
+      usuario.nombre = updateProfileDto.nombre;
+    }
+
+    if (updateProfileDto.apellido !== undefined) {
+      usuario.apellido = updateProfileDto.apellido;
+    }
+
+    await this.usuarioRepository.save(usuario);
+
+    return this.getProfile(userId);
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const usuario = await this.validateUser(userId);
+    const isCurrentValid = await usuario.comparePassword(changePasswordDto.currentPassword);
+
+    if (!isCurrentValid) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    usuario.password = changePasswordDto.newPassword;
+    await this.usuarioRepository.save(usuario);
+
+    return { changed: true };
   }
 }

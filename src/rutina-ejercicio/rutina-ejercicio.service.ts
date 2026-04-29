@@ -87,7 +87,10 @@ export class RutinaEjercicioService {
   }
 
   async marcarCompletada(id: string) {
-    const rutinaEjercicio = await this.rutinaEjercicioRepository.findOne({ where: { rutinaEjercicioId: id } });
+    const rutinaEjercicio = await this.rutinaEjercicioRepository.findOne({
+      where: { rutinaEjercicioId: id },
+      relations: ['rutinaDia'],
+    });
     if (!rutinaEjercicio) {
       throw new Error('RutinaEjercicio not found');
     }
@@ -95,6 +98,24 @@ export class RutinaEjercicioService {
     rutinaEjercicio.completada = !rutinaEjercicio.completada;
     rutinaEjercicio.fechaCompletada = rutinaEjercicio.completada ? new Date() : null;
 
-    return this.rutinaEjercicioRepository.save(rutinaEjercicio);
+    const updatedRutinaEjercicio = await this.rutinaEjercicioRepository.save(rutinaEjercicio);
+
+    const rutinaDiaId = rutinaEjercicio.rutinaDia?.rutinaDiaId;
+    if (rutinaDiaId) {
+      const ejerciciosDelDia = await this.rutinaEjercicioRepository.find({
+        where: { rutinaDia: { rutinaDiaId } },
+      });
+
+      const total = ejerciciosDelDia.length;
+      const completados = ejerciciosDelDia.filter((item) => item.completada).length;
+      const diaFinalizado = total > 0 && completados === total;
+
+      await this.rutinaDiaRepository.update(rutinaDiaId, {
+        finalizada: diaFinalizado,
+        fechaFinalizada: diaFinalizado ? new Date() : null,
+      });
+    }
+
+    return updatedRutinaEjercicio;
   }
 }

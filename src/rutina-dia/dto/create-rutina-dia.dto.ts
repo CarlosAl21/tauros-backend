@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateRutinaDiaDto {
 
@@ -17,4 +17,8 @@ export class CreateRutinaDiaDto {
     @IsString()
     @IsNotEmpty()
     planEntrenamientoId: string;
+
+    @IsOptional()
+    @IsNumber()
+    descansoSegundos?: number;
 }

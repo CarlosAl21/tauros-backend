@@ -76,6 +76,7 @@ export class PlanEntrenamientoService {
         numeroDia: index + 1,
         nombre: this.buildDayName(index + 1),
         descripcion: `Dia ${index + 1}`,
+        descansoSegundos: 60,
         planEntrenamiento: savedPlan,
       }));
 
@@ -205,6 +206,9 @@ export class PlanEntrenamientoService {
         numeroDia: dia.numeroDia,
         nombre: dia.nombre,
         descripcion: dia.descripcion,
+        descansoSegundos: dia.descansoSegundos ?? 60,
+        finalizada: false,
+        fechaFinalizada: null,
         planEntrenamiento: planGuardado,
       });
       const diaGuardado = await this.rutinaDiaRepository.save(copiaDia);

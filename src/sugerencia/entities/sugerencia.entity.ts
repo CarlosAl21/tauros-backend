@@ -21,4 +21,7 @@ export class Sugerencia {
     @Column()
     entidadId: string;
 
+    @Column({ default: false })
+    solucionada: boolean;
+
 }

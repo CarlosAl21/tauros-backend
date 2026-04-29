@@ -115,6 +115,9 @@ export class UsuarioService {
           numeroDia: rutina.numeroDia,
           nombre: rutina.nombre,
           descripcion: rutina.descripcion,
+          descansoSegundos: rutina.descansoSegundos,
+          finalizada: rutina.finalizada,
+          fechaFinalizada: rutina.fechaFinalizada,
           ejercicios: (rutina.rutinasEjercicio || []).map((rutinaEjercicio) => ({
             rutinaEjercicioId: rutinaEjercicio.rutinaEjercicioId,
             orden: rutinaEjercicio.orden,
@@ -122,6 +125,8 @@ export class UsuarioService {
             repeticiones: rutinaEjercicio.repeticiones,
             carga: rutinaEjercicio.carga,
             notasEspecificas: rutinaEjercicio.notasEspecificas,
+            completada: rutinaEjercicio.completada,
+            fechaCompletada: rutinaEjercicio.fechaCompletada,
             ejercicioId: rutinaEjercicio.ejercicio?.ejercicioId || null,
             ejercicioNombre: rutinaEjercicio.ejercicio?.nombre || 'Ejercicio sin nombre',
           })),

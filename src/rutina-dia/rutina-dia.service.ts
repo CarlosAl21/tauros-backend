@@ -26,6 +26,7 @@ export class RutinaDiaService {
       numeroDia: createRutinaDiaDto.numeroDia,
       nombre: createRutinaDiaDto.nombre,
       descripcion: createRutinaDiaDto.descripcion,
+      descansoSegundos: createRutinaDiaDto.descansoSegundos ?? 60,
       planEntrenamiento: planEntrenamiento,
     });
     return this.rutinaDiaRepository.save(rutinaDia);
