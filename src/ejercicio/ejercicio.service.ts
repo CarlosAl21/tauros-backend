@@ -92,6 +92,7 @@ export class EjercicioService {
       .leftJoinAndSelect('ejercicio.categoria', 'categoria')
       .leftJoinAndSelect('ejercicio.tipo', 'tipo')
       .leftJoinAndSelect('ejercicio.maquina', 'maquina')
+      .where('ejercicio.isActive IS DISTINCT FROM false')
       .getMany();
 
     return ejercicios.map((ejercicio) => this.toResponse(ejercicio));
@@ -188,8 +189,25 @@ export class EjercicioService {
   }
 
   async remove(id: string) {
-    await this.ejercicioRepository.delete(id);
-    return { message: 'Ejercicio removed successfully' };
+    const ejercicio = await this.ejercicioRepository.findOne({ where: { ejercicioId: id } });
+    if (!ejercicio) {
+      throw new Error('Ejercicio not found');
+    }
+
+    ejercicio.isActive = false;
+    await this.ejercicioRepository.save(ejercicio);
+    return { message: 'Ejercicio desactivado' };
+  }
+
+  async activate(id: string) {
+    const ejercicio = await this.ejercicioRepository.findOne({ where: { ejercicioId: id } });
+    if (!ejercicio) {
+      throw new Error('Ejercicio not found');
+    }
+
+    ejercicio.isActive = true;
+    await this.ejercicioRepository.save(ejercicio);
+    return { message: 'Ejercicio activado' };
   }
 
   private async resolveMediaLink(options: {
@@ -244,6 +262,7 @@ export class EjercicioService {
             linkFoto: ejercicio.maquina.linkFoto,
           }
         : null,
+      isActive: ejercicio.isActive !== false,
     };
   }
 }

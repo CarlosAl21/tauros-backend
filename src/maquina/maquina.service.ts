@@ -34,7 +34,17 @@ export class MaquinaService {
   }
 
   async findAll() {
-    return this.maquinaRepository.find();
+    const maquinas = await this.maquinaRepository.createQueryBuilder('maquina')
+      .where('maquina.isActive IS DISTINCT FROM false')
+      .getMany();
+
+    return maquinas.map((m) => ({
+      maquinaId: m.maquinaId,
+      nombre: m.nombre,
+      linkFoto: m.linkFoto,
+      numeroMaquina: m.numeroMaquina,
+      isActive: m.isActive !== false,
+    }));
   }
 
   async findOne(id: string) {
@@ -72,8 +82,25 @@ export class MaquinaService {
   }
 
   async remove(id: string) {
-    await this.maquinaRepository.delete({ maquinaId: id });
-    return `This action removes a #${id} maquina`;
+    const maquina = await this.maquinaRepository.findOne({ where: { maquinaId: id } });
+    if (!maquina) {
+      throw new Error('Maquina not found');
+    }
+
+    maquina.isActive = false;
+    await this.maquinaRepository.save(maquina);
+    return `Maquina desactivada`;
+  }
+
+  async activate(id: string) {
+    const maquina = await this.maquinaRepository.findOne({ where: { maquinaId: id } });
+    if (!maquina) {
+      throw new Error('Maquina not found');
+    }
+
+    maquina.isActive = true;
+    await this.maquinaRepository.save(maquina);
+    return `Maquina activada`;
   }
 
   private async resolveLinkFoto(options: {

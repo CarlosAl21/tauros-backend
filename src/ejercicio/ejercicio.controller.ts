@@ -82,4 +82,10 @@ export class EjercicioController {
   remove(@Param('id') id: string) {
     return this.ejercicioService.remove(id);
   }
+
+  @Patch(':id/activar')
+  @Roles(Rol.ADMIN, Rol.COACH)
+  async activate(@Param('id') id: string) {
+    return this.ejercicioService.activate(id);
+  }
 }

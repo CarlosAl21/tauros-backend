@@ -61,4 +61,10 @@ export class UsuarioController {
   remove(@Param('id') id: string) {
     return this.usuarioService.remove(id);
   }
+
+  @Patch(':id/activar')
+  @Roles(Rol.ADMIN)
+  activate(@Param('id') id: string) {
+    return this.usuarioService.activate(id);
+  }
 }

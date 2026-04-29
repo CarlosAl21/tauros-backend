@@ -200,6 +200,25 @@ export class UsuarioService {
     }
   }
 
+  async activate(id: string) {
+    try {
+      const usuario = await this.usuarioRepository.findOne({
+        where: { userId: id },
+      });
+
+      if (!usuario) {
+        console.warn(`Usuario con ID ${id} no encontrado para activación`);
+        return null;
+      }
+
+      usuario.isActive = true;
+      await this.usuarioRepository.save(usuario);
+      return { message: `Usuario con ID ${id} activado correctamente` };
+    } catch (error) {
+      console.error('Error activando usuario:', error);
+    }
+  }
+
   async obtenerEstadisticasUsuario(userId: string) {
     try {
       const usuario = await this.usuarioRepository.findOne({

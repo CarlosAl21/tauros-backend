@@ -64,4 +64,10 @@ export class MaquinaController {
   remove(@Param('id') id: string) {
     return this.maquinaService.remove(id);
   }
+
+  @Patch(':id/activar')
+  @Roles(Rol.ADMIN, Rol.COACH)
+  async activate(@Param('id') id: string) {
+    return this.maquinaService.activate(id);
+  }
 }
