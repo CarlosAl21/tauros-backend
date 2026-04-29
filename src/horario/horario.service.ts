@@ -28,6 +28,39 @@ export class HorarioService {
     return index >= 0 ? index : 999;
   }
 
+  private normalizeTime(value?: string) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return '';
+    }
+
+    if (raw.toLowerCase() === 'cerrado') {
+      return 'Cerrado';
+    }
+
+    const parts = raw.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+    if (!parts) {
+      return raw;
+    }
+
+    const hours = parts[1].padStart(2, '0');
+    const minutes = parts[2];
+    return `${hours}:${minutes}`;
+  }
+
+  private formatHorario(horario: Horario | null) {
+    if (!horario) {
+      return null;
+    }
+
+    return {
+      ...horario,
+      apertura: this.normalizeTime(horario.apertura),
+      cierre: this.normalizeTime(horario.cierre),
+      diasSemanales: this.normalizeDay(horario.diasSemanales),
+    } as Horario;
+  }
+
   async create(createHorarioDto: CreateHorarioDto) {
     const horariosPorDia = Array.isArray(createHorarioDto.horariosPorDia)
       ? createHorarioDto.horariosPorDia
@@ -42,8 +75,8 @@ export class HorarioService {
           continue;
         }
 
-        const apertura = item.apertura || createHorarioDto.apertura;
-        const cierre = item.cierre || createHorarioDto.cierre;
+        const apertura = this.normalizeTime(item.apertura || createHorarioDto.apertura);
+        const cierre = this.normalizeTime(item.cierre || createHorarioDto.cierre);
 
         if (!apertura || !cierre) {
           continue;
@@ -53,7 +86,7 @@ export class HorarioService {
         if (existing) {
           existing.apertura = apertura;
           existing.cierre = cierre;
-          saved.push(await this.horarioRepository.save(existing));
+          saved.push(this.formatHorario(await this.horarioRepository.save(existing)) as Horario);
           continue;
         }
 
@@ -62,7 +95,7 @@ export class HorarioService {
           apertura,
           cierre,
         });
-        saved.push(await this.horarioRepository.save(created));
+        saved.push(this.formatHorario(await this.horarioRepository.save(created)) as Horario);
       }
 
       return saved.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
@@ -80,44 +113,58 @@ export class HorarioService {
           continue;
         }
 
+        const apertura = this.normalizeTime(createHorarioDto.apertura);
+        const cierre = this.normalizeTime(createHorarioDto.cierre);
+
         const existing = await this.horarioRepository.findOne({ where: { diasSemanales: dia } });
         if (existing) {
-          existing.apertura = createHorarioDto.apertura;
-          existing.cierre = createHorarioDto.cierre;
-          saved.push(await this.horarioRepository.save(existing));
+          existing.apertura = apertura;
+          existing.cierre = cierre;
+          saved.push(this.formatHorario(await this.horarioRepository.save(existing)) as Horario);
           continue;
         }
 
         const created = this.horarioRepository.create({
           diasSemanales: dia,
-          apertura: createHorarioDto.apertura,
-          cierre: createHorarioDto.cierre,
+          apertura,
+          cierre,
         });
-        saved.push(await this.horarioRepository.save(created));
+        saved.push(this.formatHorario(await this.horarioRepository.save(created)) as Horario);
       }
 
       return saved.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
     }
 
     const horario = this.horarioRepository.create({
-      apertura: createHorarioDto.apertura,
-      cierre: createHorarioDto.cierre,
+      apertura: this.normalizeTime(createHorarioDto.apertura),
+      cierre: this.normalizeTime(createHorarioDto.cierre),
       diasSemanales: this.normalizeDay(createHorarioDto.diasSemanales),
     });
-    return this.horarioRepository.save(horario);
+    return this.formatHorario(await this.horarioRepository.save(horario));
   }
 
   async findAll() {
     const horarios = await this.horarioRepository.find();
-    return horarios.sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales));
+    return horarios
+      .sort((a, b) => this.dayOrder(a.diasSemanales) - this.dayOrder(b.diasSemanales))
+      .map((item) => this.formatHorario(item));
   }
 
   async findOne(id: string) {
-    return this.horarioRepository.findOne({ where: { horarioId: id } });
+    const horario = await this.horarioRepository.findOne({ where: { horarioId: id } });
+    return this.formatHorario(horario);
   }
 
   async update(id: string, updateHorarioDto: UpdateHorarioDto) {
-    await this.horarioRepository.update(id, updateHorarioDto);
+    const { horarioId: _horarioId, ...rest } = updateHorarioDto as UpdateHorarioDto & { horarioId?: string };
+    const normalized = {
+      ...rest,
+      apertura: rest.apertura !== undefined ? this.normalizeTime(rest.apertura) : undefined,
+      cierre: rest.cierre !== undefined ? this.normalizeTime(rest.cierre) : undefined,
+      diasSemanales: rest.diasSemanales !== undefined ? this.normalizeDay(rest.diasSemanales) : undefined,
+    };
+
+    await this.horarioRepository.update(id, normalized);
     return this.findOne(id);
   }
 
