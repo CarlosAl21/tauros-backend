@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { UsuarioModule } from './usuario/usuario.module';
 import { ComposicionCorporalModule } from './composicion-corporal/composicion-corporal.module';
 import { PlanEntrenamientoModule } from './plan-entrenamiento/plan-entrenamiento.module';
+import { PlanNutricionalModule } from './plan-nutricional/plan-nutricional.module';
 import { RutinaDiaModule } from './rutina-dia/rutina-dia.module';
 import { RutinaEjercicioModule } from './rutina-ejercicio/rutina-ejercicio.module';
 import { EjercicioModule } from './ejercicio/ejercicio.module';
@@ -58,6 +59,7 @@ import { AuthModule } from './auth/auth.module';
     UsuarioModule,
     ComposicionCorporalModule,
     PlanEntrenamientoModule,
+    PlanNutricionalModule,
     RutinaDiaModule,
     RutinaEjercicioModule,
     EjercicioModule,

@@ -1,8 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { ComposicionCorporal } from 'src/composicion-corporal/entities/composicion-corporal.entity';
 import { Evento } from 'src/evento/entities/evento.entity';
-import { PlanEntrenamiento } from 'src/plan-entrenamiento/entities/plan-entrenamiento.entity';
-import { SuscripcionUsuario } from 'src/suscripcion-usuario/entities/suscripcion-usuario.entity';
+import { PlanEntrenamiento } from 'src/plan-entrenamiento/entities/plan-entrenamiento.entity';import { PlanNutricional } from "src/plan-nutricional/entities/plan-nutricional.entity";import { SuscripcionUsuario } from 'src/suscripcion-usuario/entities/suscripcion-usuario.entity';
 import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum Rol {
@@ -55,6 +54,9 @@ export class Usuario {
 
     @OneToMany(() => SuscripcionUsuario, suscripcionUsuario => suscripcionUsuario.usuario)
     suscripcionUsuarios: SuscripcionUsuario[];
+
+    @OneToMany(() => PlanNutricional, planNutricional => planNutricional.usuario)
+    planesNutricionales: PlanNutricional[];
 
     @ManyToMany(() => Evento, evento => evento.participantes)
     eventos: Evento[];

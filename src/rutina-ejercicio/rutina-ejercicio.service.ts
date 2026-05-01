@@ -3,6 +3,7 @@ import { CreateRutinaEjercicioDto } from './dto/create-rutina-ejercicio.dto';
 import { UpdateRutinaEjercicioDto } from './dto/update-rutina-ejercicio.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RutinaEjercicio } from './entities/rutina-ejercicio.entity';
+import { CalentamientoEjercicio } from './entities/calentamiento-ejercicio.entity';
 import { Repository } from 'typeorm';
 import { RutinaDia } from 'src/rutina-dia/entities/rutina-dia.entity';
 import { Ejercicio } from 'src/ejercicio/entities/ejercicio.entity';
@@ -13,6 +14,9 @@ export class RutinaEjercicioService {
   constructor(
     @InjectRepository(RutinaEjercicio)
     private readonly rutinaEjercicioRepository: Repository<RutinaEjercicio>,
+
+    @InjectRepository(CalentamientoEjercicio)
+    private readonly calentamientoRepository: Repository<CalentamientoEjercicio>,
 
     @InjectRepository(RutinaDia)
     private readonly rutinaDiaRepository: Repository<RutinaDia>,
@@ -36,21 +40,41 @@ export class RutinaEjercicioService {
       orden: createRutinaEjercicioDto.orden,
       series: createRutinaEjercicioDto.series,
       repeticiones: createRutinaEjercicioDto.repeticiones,
+      tiempoSegundos: createRutinaEjercicioDto.tiempoSegundos,
       carga: createRutinaEjercicioDto.carga,
       notasEspecificas: createRutinaEjercicioDto.notasEspecificas,
+      descansoSegundos: createRutinaEjercicioDto.descansoSegundos,
       rutinaDia: rutionaDia,
       ejercicio: ejercicio,
     });
-    return this.rutinaEjercicioRepository.save(rutinaEjercicio);
 
+    const savedRutina = await this.rutinaEjercicioRepository.save(rutinaEjercicio);
+
+    // Crear calentamientos si se proporcionan
+    if (createRutinaEjercicioDto.calentamientos && createRutinaEjercicioDto.calentamientos.length > 0) {
+      const calentamientos = createRutinaEjercicioDto.calentamientos.map(cal => 
+        this.calentamientoRepository.create({
+          ...cal,
+          rutinaEjercicio: savedRutina
+        })
+      );
+      await this.calentamientoRepository.save(calentamientos);
+    }
+
+    return this.findOne(savedRutina.rutinaEjercicioId);
   }
 
   async findAll() {
-    return this.rutinaEjercicioRepository.find();
+    return this.rutinaEjercicioRepository.find({
+      relations: ['calentamientos'],
+    });
   }
 
   async findOne(id: string) {
-    return this.rutinaEjercicioRepository.findOne({ where: { rutinaEjercicioId: id } });
+    return this.rutinaEjercicioRepository.findOne({
+      where: { rutinaEjercicioId: id },
+      relations: ['calentamientos'],
+    });
   }
 
   async update(id: string, updateRutinaEjercicioDto: UpdateRutinaEjercicioDto) {
