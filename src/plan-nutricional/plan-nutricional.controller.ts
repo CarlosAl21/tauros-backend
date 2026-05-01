@@ -47,7 +47,7 @@ export class PlanNutricionalController {
         files.linkPdf[0],
         'tauros/planes-nutricionales',
       );
-      linkPdf = uploadedFile.secure_url;
+      linkPdf = uploadedFile;
     }
 
     return this.planNutricionalService.create({
@@ -86,7 +86,7 @@ export class PlanNutricionalController {
         files.linkPdf[0],
         'tauros/planes-nutricionales',
       );
-      linkPdf = uploadedFile.secure_url;
+      linkPdf = uploadedFile;
     }
 
     return this.planNutricionalService.update(id, {
