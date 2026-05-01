@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ComposicionCorporalService } from './composicion-corporal.service';
 import { CreateComposicionCorporalDto } from './dto/create-composicion-corporal.dto';
 import { UpdateComposicionCorporalDto } from './dto/update-composicion-corporal.dto';
@@ -30,8 +30,13 @@ export class ComposicionCorporalController {
 
   @Get()
   @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
-  findAll() {
-    return this.composicionCorporalService.findAll();
+  async findAll() {
+    try {
+      return await this.composicionCorporalService.findAll();
+    } catch (err) {
+      Logger.error('Error en findAll composicion-corporal', err?.stack || err?.message || err);
+      throw new InternalServerErrorException('Error interno al obtener composiciones corporales');
+    }
   }
 
   @Get(':id')

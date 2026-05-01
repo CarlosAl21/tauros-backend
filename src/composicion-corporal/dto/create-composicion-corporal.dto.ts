@@ -32,9 +32,5 @@ export class CreateComposicionCorporalDto {
 
     @IsString()
     @IsOptional()
-    masaMuscularTipo?: string;
-
-    @IsString()
-    @IsOptional()
     usuarioId?: string;
 }
