@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
 
 type OpenApiSchema = Record<string, any>;
@@ -170,6 +171,11 @@ function applySwaggerExamples(document: OpenApiDocument): void {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const dataSource = app.get(DataSource);
+
+  if (process.env.NODE_ENV === 'production' || process.env.RENDER === 'true') {
+    await dataSource.synchronize();
+  }
   
   // Habilitar validación global
   app.useGlobalPipes(new ValidationPipe({
