@@ -22,6 +22,18 @@ export class CreateComposicionCorporalDto {
     @IsOptional()
     grasaVisceral?: number;
 
+    @IsNumber()
+    @IsOptional()
+    masaMuscularKg?: number;
+
+    @IsNumber()
+    @IsOptional()
+    masaMuscularPorcentaje?: number;
+
+    @IsString()
+    @IsOptional()
+    masaMuscularTipo?: string;
+
     @IsString()
     @IsOptional()
     usuarioId?: string;

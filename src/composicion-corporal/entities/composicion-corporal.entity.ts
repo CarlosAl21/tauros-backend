@@ -22,6 +22,15 @@ export class ComposicionCorporal {
     @Column({ nullable: true })
     grasaVisceral: number;
 
+    @Column({ nullable: true })
+    masaMuscularKg: number;
+
+    @Column({ nullable: true })
+    masaMuscularPorcentaje: number;
+
+    @Column({ type: 'varchar', default: 'kg', nullable: true })
+    masaMuscularTipo: string;
+
     @Column({default: () => 'CURRENT_TIMESTAMP'})
     fechaRegistro: Date;
 
