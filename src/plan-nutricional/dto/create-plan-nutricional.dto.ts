@@ -1,15 +1,10 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreatePlanNutricionalDto {
 
     @IsString()
     @IsNotEmpty()
     linkPdf: string;
-
-    @IsOptional()
-    @IsInt()
-    @Min(1)
-    pagesCount?: number;
 
     @IsString()
     @IsNotEmpty()
