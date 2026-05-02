@@ -64,14 +64,18 @@ export class CloudinaryService {
   }
 
   buildPreviewUrl(fileUrl: string): string {
+    // If it's already a public URL (contains /upload/), return it as-is for iframe viewing
+    if (fileUrl && fileUrl.includes('/upload/')) {
+      return fileUrl;
+    }
+
+    // Otherwise, try to reconstruct the public URL from the private one
     const parsedUrl = this.parseCloudinaryUrl(fileUrl);
     if (!parsedUrl) {
       return fileUrl;
     }
 
     const { publicId, format, version } = parsedUrl;
-
-    // Use 'upload' type for public viewing in iframe (no authentication/signing)
     return cloudinary.utils.url(publicId, {
       resource_type: 'raw',
       type: 'upload',
