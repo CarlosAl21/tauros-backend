@@ -68,12 +68,13 @@ export class PlanNutricionalController {
   async getPreview(@Param('id') id: string, @Res() res: any) {
     try {
       const plan = await this.planNutricionalService.findOne(id);
-      
-      if (!plan?.previewUrl) {
+
+      const pdfUrl = plan?.downloadUrl || plan?.previewUrl;
+      if (!pdfUrl) {
         return res.status(404).json({ error: 'Plan no encontrado' });
       }
 
-      const response = await fetch(plan.previewUrl);
+      const response = await fetch(pdfUrl);
       if (!response.ok) {
         throw new Error(`Cloudinary returned ${response.status}`);
       }
