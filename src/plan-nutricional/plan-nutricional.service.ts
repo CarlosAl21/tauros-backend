@@ -97,10 +97,20 @@ export class PlanNutricionalService {
   }
 
   private mapPlanResponse(plan: PlanNutricional) {
+    const previewUrl = this.cloudinaryService.buildPreviewUrl(plan.linkPdf);
+    const downloadUrl = this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, true);
+
+    const pagesCount = (plan as any).pagesCount || 1;
+    const pageImageUrls = Array.from({ length: pagesCount }, (_v, i) =>
+      this.cloudinaryService.buildPageImageUrl(plan.linkPdf, i + 1),
+    );
+
     return {
       ...plan,
-      previewUrl: this.cloudinaryService.buildPreviewUrl(plan.linkPdf),
-      downloadUrl: this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, true),
+      previewUrl,
+      downloadUrl,
+      pagesCount,
+      pageImageUrls,
     };
   }
 }
