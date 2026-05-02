@@ -63,6 +63,24 @@ export class CloudinaryService {
     });
   }
 
+  buildPreviewUrl(fileUrl: string): string {
+    const parsedUrl = this.parseCloudinaryUrl(fileUrl);
+    if (!parsedUrl) {
+      return fileUrl;
+    }
+
+    const { publicId, format, version } = parsedUrl;
+
+    // Use 'upload' type for public viewing in iframe (no authentication/signing)
+    return cloudinary.utils.url(publicId, {
+      resource_type: 'raw',
+      type: 'upload',
+      secure: true,
+      version,
+      format,
+    });
+  }
+
   buildPrivateDownloadUrl(fileUrl: string, attachment = false): string {
     const parsedUrl = this.parseCloudinaryUrl(fileUrl);
     if (!parsedUrl) {
@@ -71,6 +89,7 @@ export class CloudinaryService {
 
     const { publicId, format, version } = parsedUrl;
 
+    // Use 'authenticated' type for secure downloads with signature
     return cloudinary.utils.url(publicId, {
       resource_type: 'raw',
       type: 'authenticated',

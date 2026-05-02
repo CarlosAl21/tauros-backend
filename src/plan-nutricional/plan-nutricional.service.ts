@@ -98,7 +98,7 @@ export class PlanNutricionalService {
   private mapPlanResponse(plan: PlanNutricional) {
     return {
       ...plan,
-      previewUrl: this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, false),
+      previewUrl: this.cloudinaryService.buildPreviewUrl(plan.linkPdf),
       downloadUrl: this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, true),
     };
   }
