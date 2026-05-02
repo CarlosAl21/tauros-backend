@@ -69,12 +69,15 @@ export class CloudinaryService {
       return fileUrl;
     }
 
-    const { publicId, format } = parsedUrl;
+    const { publicId, format, version } = parsedUrl;
 
-    return cloudinary.utils.private_download_url(publicId, format, {
+    return cloudinary.utils.url(publicId, {
       resource_type: 'raw',
-      type: 'upload',
-      attachment,
+      type: 'authenticated',
+      secure: true,
+      sign_url: true,
+      version,
+      format,
     });
   }
 
@@ -128,8 +131,9 @@ export class CloudinaryService {
         return null;
       }
 
+      let version = undefined;
       if (/^v\d+$/.test(pathParts[0])) {
-        pathParts.shift();
+        version = Number(pathParts.shift()?.slice(1));
       }
 
       const filename = pathParts.pop();
@@ -145,7 +149,7 @@ export class CloudinaryService {
         return null;
       }
 
-      return { publicId, format };
+      return { publicId, format, version };
     } catch (_error) {
       return null;
     }
