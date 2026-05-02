@@ -63,6 +63,21 @@ export class CloudinaryService {
     });
   }
 
+  buildPrivateDownloadUrl(fileUrl: string, attachment = false): string {
+    const parsedUrl = this.parseCloudinaryUrl(fileUrl);
+    if (!parsedUrl) {
+      return fileUrl;
+    }
+
+    const { publicId, format } = parsedUrl;
+
+    return cloudinary.utils.private_download_url(publicId, format, {
+      resource_type: 'raw',
+      type: 'upload',
+      attachment,
+    });
+  }
+
   createUploadSignature(options: CloudinaryUploadSignatureOptions): CloudinaryUploadSignatureResponse {
     const timestamp = Math.floor(Date.now() / 1000);
     const cloudName = this.configService.getOrThrow<string>('CLOUDINARY_CLOUD_NAME');
@@ -94,5 +109,45 @@ export class CloudinaryService {
       .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
       .map(([key, value]) => `${key}=${value}`)
       .join('&');
+  }
+
+  private parseCloudinaryUrl(fileUrl: string) {
+    try {
+      const parsed = new URL(fileUrl);
+      if (!parsed.hostname.includes('cloudinary.com') || !parsed.pathname.includes('/upload/')) {
+        return null;
+      }
+
+      const uploadPath = parsed.pathname.split('/upload/')[1];
+      if (!uploadPath) {
+        return null;
+      }
+
+      const pathParts = decodeURIComponent(uploadPath).split('/').filter(Boolean);
+      if (!pathParts.length) {
+        return null;
+      }
+
+      if (/^v\d+$/.test(pathParts[0])) {
+        pathParts.shift();
+      }
+
+      const filename = pathParts.pop();
+      if (!filename) {
+        return null;
+      }
+
+      const formatMatch = filename.match(/\.([^.]+)$/);
+      const format = formatMatch?.[1] || 'pdf';
+      const publicId = [...pathParts, filename.replace(/\.[^.]+$/, '')].join('/');
+
+      if (!publicId) {
+        return null;
+      }
+
+      return { publicId, format };
+    } catch (_error) {
+      return null;
+    }
   }
 }

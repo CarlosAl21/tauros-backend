@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PlanNutricional } from './entities/plan-nutricional.entity';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class PlanNutricionalService {
@@ -14,6 +15,7 @@ export class PlanNutricionalService {
 
     @InjectRepository(Usuario)
     private readonly usuarioRepository: Repository<Usuario>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async create(createPlanNutricionalDto: CreatePlanNutricionalDto) {
@@ -48,7 +50,7 @@ export class PlanNutricionalService {
       relations: ['usuario'],
     });
 
-    return planes;
+    return planes.map((plan) => this.mapPlanResponse(plan));
   }
 
   async findOne(id: string) {
@@ -61,7 +63,7 @@ export class PlanNutricionalService {
       throw new NotFoundException('Plan nutricional no encontrado');
     }
 
-    return plan;
+    return this.mapPlanResponse(plan);
   }
 
   async update(id: string, updatePlanNutricionalDto: UpdatePlanNutricionalDto) {
@@ -91,5 +93,13 @@ export class PlanNutricionalService {
 
     await this.planNutricionalRepository.remove(plan);
     return { message: 'Plan nutricional eliminado' };
+  }
+
+  private mapPlanResponse(plan: PlanNutricional) {
+    return {
+      ...plan,
+      previewUrl: this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, false),
+      downloadUrl: this.cloudinaryService.buildPrivateDownloadUrl(plan.linkPdf, true),
+    };
   }
 }
