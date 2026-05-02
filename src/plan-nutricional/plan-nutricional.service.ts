@@ -29,6 +29,7 @@ export class PlanNutricionalService {
 
     const planNutricional = this.planNutricionalRepository.create({
       linkPdf: createPlanNutricionalDto.linkPdf,
+      pagesCount: createPlanNutricionalDto.pagesCount || 1,
       usuario,
     });
 

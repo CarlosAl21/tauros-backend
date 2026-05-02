@@ -10,6 +10,9 @@ export class PlanNutricional {
     @Column()
     linkPdf: string;
 
+    @Column({ type: 'int', default: 1 })
+    pagesCount: number;
+
     @CreateDateColumn()
     createdAt: Date;
 

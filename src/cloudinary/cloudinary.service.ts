@@ -118,6 +118,37 @@ export class CloudinaryService {
     });
   }
 
+  async getPagesCount(fileUrl: string): Promise<number> {
+    try {
+      const parsedUrl = this.parseCloudinaryUrl(fileUrl);
+      if (!parsedUrl || parsedUrl.format !== 'pdf') {
+        return 1;
+      }
+
+      const result = await cloudinary.api.resource(parsedUrl.publicId, {
+        resource_type: 'raw',
+        pages: true,
+      });
+
+      return result.pages || 1;
+    } catch (error) {
+      console.error('Error getting pages count:', error);
+      return 1;
+    }
+  }
+
+  buildPageImageUrl(fileUrl: string, page: number = 1): string {
+    const parsedUrl = this.parseCloudinaryUrl(fileUrl);
+    if (!parsedUrl || parsedUrl.format !== 'pdf') {
+      return fileUrl;
+    }
+
+    const { cloudName, publicId, version } = parsedUrl;
+    return `https://res.cloudinary.com/${cloudName}/image/upload/pg_${page}/f_jpg${
+      version ? `/v${version}` : ''
+    }/${publicId}.jpg`;
+  }
+
   createUploadSignature(options: CloudinaryUploadSignatureOptions): CloudinaryUploadSignatureResponse {
     const timestamp = Math.floor(Date.now() / 1000);
     const cloudName = this.configService.getOrThrow<string>('CLOUDINARY_CLOUD_NAME');
@@ -158,6 +189,13 @@ export class CloudinaryService {
         return null;
       }
 
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+      const cloudName = pathSegments[0];
+      const assetType = pathSegments[1];
+      if (!cloudName || !assetType) {
+        return null;
+      }
+
       const uploadPath = parsed.pathname.split('/upload/')[1];
       if (!uploadPath) {
         return null;
@@ -186,7 +224,7 @@ export class CloudinaryService {
         return null;
       }
 
-      return { publicId, format, version };
+      return { cloudName, assetType, publicId, format, version };
     } catch (_error) {
       return null;
     }

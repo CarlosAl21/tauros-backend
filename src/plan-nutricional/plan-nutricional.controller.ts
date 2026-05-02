@@ -51,9 +51,16 @@ export class PlanNutricionalController {
       linkPdf = uploadedFile;
     }
 
+    // Get pages count from Cloudinary
+    let pagesCount = createPlanNutricionalDto.pagesCount || 1;
+    if (linkPdf) {
+      pagesCount = await this.cloudinaryService.getPagesCount(linkPdf);
+    }
+
     return this.planNutricionalService.create({
       ...createPlanNutricionalDto,
       linkPdf,
+      pagesCount,
     });
   }
 
