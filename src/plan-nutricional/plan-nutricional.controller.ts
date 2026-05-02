@@ -69,29 +69,16 @@ export class PlanNutricionalController {
     try {
       const plan = await this.planNutricionalService.findOne(id);
 
-      const pdfUrl = plan?.downloadUrl || plan?.previewUrl;
-      if (!pdfUrl) {
-        return res.status(404).json({ error: 'Plan no encontrado' });
+      const previewUrl = plan?.previewUrl;
+      if (!previewUrl) {
+        return res.status(404).json({ error: 'Preview no encontrado' });
       }
 
-      const response = await fetch(pdfUrl);
-      if (!response.ok) {
-        throw new Error(`Cloudinary returned ${response.status}`);
-      }
-
-      const buffer = await response.arrayBuffer();
-      
-      res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline; filename=plan-nutricional.pdf',
-        'Cache-Control': 'public, max-age=86400',
-        'Access-Control-Allow-Origin': '*',
-      });
-      
-      res.send(Buffer.from(buffer));
+      // Redirect to Cloudinary URL directly - no need to re-serve
+      return res.redirect(previewUrl);
     } catch (error) {
-      console.error('Error fetching PDF preview:', error);
-      res.status(500).json({ error: 'No se pudo cargar el PDF' });
+      console.error('Error getting preview:', error);
+      res.status(500).json({ error: 'No se pudo cargar la vista previa' });
     }
   }
 

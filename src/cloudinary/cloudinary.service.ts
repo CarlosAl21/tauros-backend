@@ -64,18 +64,32 @@ export class CloudinaryService {
   }
 
   buildPreviewUrl(fileUrl: string): string {
-    // If it's already a public URL (contains /upload/), return it as-is for iframe viewing
+    // If it's a PDF, return the URL for viewing the complete PDF
+    // Cloudinary now supports PDF delivery with proper security settings
     if (fileUrl && fileUrl.includes('/upload/')) {
       return fileUrl;
     }
 
-    // Otherwise, try to reconstruct the public URL from the private one
+    // Otherwise, reconstruct the URL from parsed data
     const parsedUrl = this.parseCloudinaryUrl(fileUrl);
     if (!parsedUrl) {
       return fileUrl;
     }
 
     const { publicId, format, version } = parsedUrl;
+    
+    // For PDFs, return the direct PDF URL for viewing
+    if (format === 'pdf') {
+      return cloudinary.utils.url(publicId, {
+        resource_type: 'raw',
+        type: 'upload',
+        secure: true,
+        version,
+        format: 'pdf',
+      });
+    }
+
+    // For images, return as-is
     return cloudinary.utils.url(publicId, {
       resource_type: 'raw',
       type: 'upload',
