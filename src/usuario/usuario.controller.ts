@@ -5,7 +5,7 @@ import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { Roles } from 'src/auth/roles.decorator';
 import { Rol } from './entities/usuario.entity';
 import { RolesGuard } from 'src/auth/roles.guard';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('usuario')
 @ApiBearerAuth('bearer')
@@ -28,12 +28,19 @@ export class UsuarioController {
 
   @Get(':id/detalle')
   @Roles(Rol.ADMIN, Rol.COACH)
+  @ApiOperation({ summary: 'Obtener detalle completo de un usuario con todas sus rutinas y calentamientos asignados' })
+  @ApiParam({ name: 'id', description: 'ID del usuario' })
+  @ApiResponse({ status: 200, description: 'Detalle del usuario con rutinas incluyendo calentamientos de cada ejercicio' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   findDetalleRutinas(@Param('id') id: string) {
     return this.usuarioService.findDetalleRutinas(id);
   }
 
   @Get(':id/estadisticas')
   @Roles(Rol.ADMIN, Rol.COACH)
+  @ApiOperation({ summary: 'Obtener estadísticas del usuario' })
+  @ApiParam({ name: 'id', description: 'ID del usuario' })
+  @ApiResponse({ status: 200, description: 'Estadísticas del usuario' })
   obtenerEstadisticas(@Param('id') id: string) {
     return this.usuarioService.obtenerEstadisticasUsuario(id);
   }

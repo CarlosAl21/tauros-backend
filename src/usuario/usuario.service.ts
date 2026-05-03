@@ -95,7 +95,7 @@ export class UsuarioService {
           usuario: { userId: id },
           esPlantilla: false,
         },
-        relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio'],
+        relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio', 'rutinasDia.rutinasEjercicio.calentamientos'],
         order: {
           createdAt: 'DESC',
           nombre: 'ASC',
@@ -131,6 +131,7 @@ export class UsuarioService {
             fechaCompletada: rutinaEjercicio.fechaCompletada,
             ejercicioId: rutinaEjercicio.ejercicio?.ejercicioId || null,
             ejercicioNombre: rutinaEjercicio.ejercicio?.nombre || 'Ejercicio sin nombre',
+            calentamientos: rutinaEjercicio.calentamientos || [],
           })),
         })),
       );

@@ -7,6 +7,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Usuario } from 'src/usuario/entities/usuario.entity';
 import { RutinaDia } from 'src/rutina-dia/entities/rutina-dia.entity';
 import { RutinaEjercicio } from 'src/rutina-ejercicio/entities/rutina-ejercicio.entity';
+import { CalentamientoEjercicio } from 'src/rutina-ejercicio/entities/calentamiento-ejercicio.entity';
 import { InjectDataSource } from '@nestjs/typeorm';
 
 @Injectable()
@@ -27,6 +28,9 @@ export class PlanEntrenamientoService {
 
     @InjectRepository(RutinaEjercicio)
     private readonly rutinaEjercicioRepository: Repository<RutinaEjercicio>,
+
+    @InjectRepository(CalentamientoEjercicio)
+    private readonly calentamientoRepository: Repository<CalentamientoEjercicio>,
   ) {}
 
   private buildDayName(dayNumber: number) {
@@ -47,6 +51,7 @@ export class PlanEntrenamientoService {
     'rutinasDia',
     'rutinasDia.rutinasEjercicio',
     'rutinasDia.rutinasEjercicio.ejercicio',
+    'rutinasDia.rutinasEjercicio.calentamientos',
   ] as const;
 
   async create(createPlanEntrenamientoDto: CreatePlanEntrenamientoDto) {
@@ -124,6 +129,15 @@ export class PlanEntrenamientoService {
       return this.asignarPlan(id, updatePlanEntrenamientoDto.usuarioId);
     }
 
+    // Obtener el plan actual para preservar su estado
+    const planActual = await this.planEntrenamientoRepository.findOne({
+      where: { planEntrenamientoId: id },
+    });
+
+    if (!planActual) {
+      throw new Error('Plan de entrenamiento not found');
+    }
+
     const duracionDias = updatePlanEntrenamientoDto.duracionDias === undefined
       ? undefined
       : Number(updatePlanEntrenamientoDto.duracionDias);
@@ -132,12 +146,13 @@ export class PlanEntrenamientoService {
       throw new BadRequestException('duracionDias debe ser un numero entero mayor a cero');
     }
 
+    // Actualizar solo los campos especificados, preservando usuario y esPlantilla
     await this.planEntrenamientoRepository.update(id, {
       nombre: updatePlanEntrenamientoDto.nombre,
       descripcion: updatePlanEntrenamientoDto.descripcion,
       ...(duracionDias !== undefined ? { duracionDias } : {}),
       objetivo: updatePlanEntrenamientoDto.objetivo,
-      usuario: null,
+      // No modificar usuario ni esPlantilla - mantener estado actual
     });
     return this.findOne(id);
   }
@@ -182,7 +197,7 @@ export class PlanEntrenamientoService {
   async asignarPlan(planEntrenamientoId: string, usuarioId: string) {
     const planEntrenamiento = await this.planEntrenamientoRepository.findOne({
       where: { planEntrenamientoId },
-      relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio'],
+      relations: ['rutinasDia', 'rutinasDia.rutinasEjercicio', 'rutinasDia.rutinasEjercicio.ejercicio', 'rutinasDia.rutinasEjercicio.calentamientos'],
     });
     const usuario = await this.usuarioRepository.findOne({ where: { userId: usuarioId } });
 
@@ -225,7 +240,21 @@ export class PlanEntrenamientoService {
           rutinaDia: diaGuardado,
           ejercicio: ejercicio.ejercicio,
         });
-        await this.rutinaEjercicioRepository.save(copiaEjercicio);
+        const ejercicioGuardado = await this.rutinaEjercicioRepository.save(copiaEjercicio);
+
+        // Copiar calentamientos del ejercicio original
+        if (ejercicio.calentamientos && ejercicio.calentamientos.length > 0) {
+          const calentamientosCopiados = ejercicio.calentamientos.map(cal =>
+            this.calentamientoRepository.create({
+              orden: cal.orden,
+              duracionSegundos: cal.duracionSegundos,
+              repeticiones: cal.repeticiones,
+              intensidad: cal.intensidad,
+              rutinaEjercicio: ejercicioGuardado,
+            })
+          );
+          await this.calentamientoRepository.save(calentamientosCopiados);
+        }
       }
     }
 
