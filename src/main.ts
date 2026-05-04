@@ -187,6 +187,43 @@ async function bootstrap() {
   // Habilitar CORS
   app.enableCors();
 
+  // Configurar headers de seguridad
+  app.use((req, res, next) => {
+    // Content Security Policy (CSP)
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; " +
+      "font-src 'self' https://fonts.gstatic.com; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self' https:; " +
+      "frame-ancestors 'none'; " +
+      "base-uri 'self'; " +
+      "form-action 'self'"
+    );
+
+    // Anti-Clickjacking
+    res.setHeader('X-Frame-Options', 'DENY');
+
+    // Prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    // XSS Protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+
+    // Referrer Policy
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Permissions Policy
+    res.setHeader(
+      'Permissions-Policy',
+      'geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()'
+    );
+
+    next();
+  });
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Tauros Backend API')
     .setDescription('Documentacion de endpoints del sistema TaurosGym')
