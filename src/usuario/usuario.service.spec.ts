@@ -73,7 +73,8 @@ describe('UsuarioService', () => {
         nombre: 'Juan',
         apellido: 'Pérez',
         correo: 'juan@test.com',
-        contrasena: 'Pass123!',
+        password: 'Pass123!',
+        telefono: '0999999999',
         fechaNacimiento: '1990-01-01',
       };
 
@@ -105,7 +106,8 @@ describe('UsuarioService', () => {
         nombre: 'Admin',
         apellido: 'User',
         correo: 'admin@test.com',
-        contrasena: 'AdminPass123!',
+        password: 'AdminPass123!',
+        telefono: '0999999999',
         fechaNacimiento: '1985-05-15',
         rol: Rol.ADMIN,
       };
@@ -132,7 +134,8 @@ describe('UsuarioService', () => {
         nombre: 'Juan',
         apellido: 'Pérez',
         correo: 'existing@test.com',
-        contrasena: 'Pass123!',
+        password: 'Pass123!',
+        telefono: '0999999999',
         fechaNacimiento: '1990-01-01',
       };
 
@@ -155,7 +158,8 @@ describe('UsuarioService', () => {
         nombre: 'Juan',
         apellido: 'Pérez',
         correo: 'new@test.com',
-        contrasena: 'Pass123!',
+        password: 'Pass123!',
+        telefono: '0999999999',
         fechaNacimiento: '1990-01-01',
       };
 
@@ -178,7 +182,8 @@ describe('UsuarioService', () => {
         nombre: 'Test',
         apellido: 'User',
         correo: 'test@test.com',
-        contrasena: 'Test123!',
+        password: 'Test123!',
+        telefono: '0999999999',
         fechaNacimiento: '2000-12-25',
       };
 
@@ -291,7 +296,8 @@ describe('UsuarioService', () => {
         nombre: 'Test',
         apellido: 'Error',
         correo: 'error@test.com',
-        contrasena: 'Pass123!',
+        password: 'Pass123!',
+        telefono: '0999999999',
         fechaNacimiento: '1990-01-01',
       };
 
