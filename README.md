@@ -22,8 +22,17 @@ DB_SCHEMA=taurosBD
 DB_EXTENSION_SCHEMA=taurosBD
 DB_SSL=true
 JWT_SECRET=tu_jwt_secret
-JWT_EXPIRATION=24h
 PORT=3000
+
+# Refresh tokens y cifrado
+ENCRYPTION_KEY=64_hex_chars_aqui
+
+# 2FA por correo
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu_correo@gmail.com
+SMTP_PASS=tu_password_o_app_password
+SMTP_FROM=TaurosGym <tu_correo@gmail.com>
 ```
 
 En Render, `DB_SSL` puede omitirse porque la app lo activa automaticamente al detectar el entorno.
@@ -65,8 +74,26 @@ Se aplico `@UseGuards(RolesGuard)` + `@Roles(...)` en todos los controladores de
 
 - `POST /auth/register`: registro de usuario
 - `POST /auth/login`: obtiene JWT
+- `POST /auth/refresh`: intercambia refresh token por access token nuevo
+- `POST /auth/logout`: revoca refresh token
 - `GET /auth/profile`: requiere JWT
 - `GET /auth/validate`: requiere JWT
+- `POST /auth/2fa/enable`: solicita codigo para activar 2FA
+- `POST /auth/2fa/send`: reenvia codigo 2FA
+- `POST /auth/2fa/verify`: verifica codigo 2FA para login o activacion
+
+## Seguridad y almacenamiento
+
+- El `access_token` y el `refresh_token` se guardan en Secure Store en el movil.
+- El access token dura poco; el refresh token rota y se revoca en la base de datos.
+- Los datos sensibles pueden migrarse a columnas cifradas con AES-256-GCM usando `src/scripts/migrate-encrypt.ts`.
+
+## Despliegue y migracion
+
+1. Define `ENCRYPTION_KEY` y las credenciales SMTP antes de activar cifrado o 2FA.
+2. Ejecuta primero en staging el script de migracion de cifrado.
+3. Verifica el envio de correo con una cuenta de prueba.
+4. Si usas Render, asegúrate de que la base de datos y el servidor compartan el mismo `JWT_SECRET` y `ENCRYPTION_KEY`.
 
 ## Scripts utiles
 

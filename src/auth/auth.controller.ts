@@ -2,10 +2,14 @@ import { Controller, Post, Body, Get, UseGuards, Request, Patch } from '@nestjs/
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RevokeTokenDto } from './dto/revoke-token.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { TwoFactorSendDto } from './dto/two-factor-send.dto';
+import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -57,5 +61,41 @@ export class AuthController {
       valid: true,
       user: req.user,
     };
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Intercambiar refresh token por access token' })
+  async refresh(@Body() body: RefreshTokenDto) {
+    const result = await this.authService.rotateRefreshToken(body.refreshToken);
+    return {
+      access_token: result.accessToken,
+      refresh_token: result.refreshToken,
+    };
+  }
+
+  @Post('logout')
+  @ApiOperation({ summary: 'Revocar refresh token (logout)' })
+  async logout(@Body() body: RevokeTokenDto) {
+    return this.authService.revokeRefreshToken(body.refreshToken);
+  }
+
+  @Post('2fa/enable')
+  @ApiBearerAuth('bearer')
+  @ApiOperation({ summary: 'Solicitar código para activar 2FA por correo' })
+  @UseGuards(JwtAuthGuard)
+  async enableTwoFactor(@Request() req) {
+    return this.authService.enableTwoFactor(req.user.userId);
+  }
+
+  @Post('2fa/send')
+  @ApiOperation({ summary: 'Reenviar código 2FA' })
+  async resendTwoFactor(@Body() body: TwoFactorSendDto) {
+    return this.authService.resendTwoFactorCode(body);
+  }
+
+  @Post('2fa/verify')
+  @ApiOperation({ summary: 'Verificar código 2FA para login o activación' })
+  async verifyTwoFactor(@Body() body: TwoFactorVerifyDto) {
+    return this.authService.verifyTwoFactor(body);
   }
 }

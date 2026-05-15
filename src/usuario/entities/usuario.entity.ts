@@ -46,6 +46,9 @@ export class Usuario {
     @Column({ default: true })
     isActive: boolean;
 
+    @Column({ default: false })
+    twoFactorEnabled: boolean;
+
     @OneToMany(() => ComposicionCorporal, composicionCorporal => composicionCorporal.usuario)
     composicionCorporal: ComposicionCorporal[];
 

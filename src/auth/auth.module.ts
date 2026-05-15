@@ -7,10 +7,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { Usuario } from '../usuario/entities/usuario.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { TwoFactorChallenge } from './entities/two-factor-challenge.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario]),
+    TypeOrmModule.forFeature([Usuario, RefreshToken, TwoFactorChallenge]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
