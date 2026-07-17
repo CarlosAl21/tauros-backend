@@ -1,6 +1,8 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { ACCESS_TOKEN_COOKIE, CSRF_COOKIE, REFRESH_TOKEN_COOKIE } from './auth.cookies';
+import { SKIP_CSRF_KEY } from './skip-csrf.decorator';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const CSRF_HEADER = 'x-csrf-token';
@@ -22,13 +24,30 @@ const CSRF_HEADER = 'x-csrf-token';
  *   acceso: /auth/refresh y /auth/logout se llaman justo cuando el access
  *   token ya venció (por eso no traen esa cookie), así que si solo mirásemos
  *   la cookie de acceso, esas dos rutas quedarían sin protección CSRF.
+ * - Endpoints marcados con @SkipCsrf() (login, register, 2fa/send, 2fa/verify)
+ *   quedan exentos SIEMPRE, sin importar qué cookies traiga la request. Son
+ *   endpoints públicos que establecen una sesión nueva; si un usuario todavía
+ *   tiene cookies de un login anterior (vigentes hasta 24h) dando vueltas en
+ *   el navegador, eso no tiene nada que ver con este intento de login y no
+ *   debería bloquearlo — probado en vivo: sin este exención, cualquier
+ *   segundo login con cookies previas vivas devolvía 403.
  */
 @Injectable()
 export class CsrfGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
 
     if (!UNSAFE_METHODS.has(request.method)) {
+      return true;
+    }
+
+    const skip = this.reflector.getAllAndOverride<boolean>(SKIP_CSRF_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (skip) {
       return true;
     }
 

@@ -22,6 +22,7 @@ import {
   csrfCookieOptions,
   forClearing,
 } from './auth.cookies';
+import { SkipCsrf } from './skip-csrf.decorator';
 
 // Login/registro/refresh son blanco típico de fuerza bruta: límite más estricto
 // que el global (100 req / 60s) definido en AppModule.
@@ -52,6 +53,7 @@ export class AuthController {
 
   @Post('register')
   @Throttle(AUTH_THROTTLE)
+  @SkipCsrf()
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.register(registerDto);
@@ -61,6 +63,7 @@ export class AuthController {
 
   @Post('login')
   @Throttle(AUTH_THROTTLE)
+  @SkipCsrf()
   @ApiOperation({ summary: 'Iniciar sesion y obtener JWT' })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(loginDto);
@@ -168,6 +171,7 @@ export class AuthController {
 
   @Post('2fa/send')
   @Throttle(AUTH_THROTTLE)
+  @SkipCsrf()
   @ApiOperation({ summary: 'Reenviar código 2FA' })
   async resendTwoFactor(@Body() body: TwoFactorSendDto) {
     return this.authService.resendTwoFactorCode(body);
@@ -175,6 +179,7 @@ export class AuthController {
 
   @Post('2fa/verify')
   @Throttle(AUTH_THROTTLE)
+  @SkipCsrf()
   @ApiOperation({ summary: 'Verificar código 2FA para login o activación' })
   async verifyTwoFactor(@Body() body: TwoFactorVerifyDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.verifyTwoFactor(body);
