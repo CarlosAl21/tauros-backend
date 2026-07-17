@@ -80,32 +80,27 @@ describe('CsrfGuard', () => {
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
-  it('exige CSRF en /auth/refresh o /auth/logout, autenticadas solo con la cookie de refresh (sin cookie de acceso, ya vencida)', () => {
+  it('permite requests con solo la cookie de refresh (sin cookie de acceso) sin exigir CSRF', () => {
+    // /auth/refresh y /auth/logout se llaman justo cuando el access token ya
+    // vencio (por eso no traen esa cookie); estan exentas via @SkipCsrf() en
+    // el controller, pero el guard tambien debe dejar pasar cualquier otra
+    // request que llegue en ese mismo estado (sin cookie de acceso) sin exigir
+    // nada, ya que no cuenta como "autenticada por cookie" para este chequeo.
     const guard = buildGuard();
     const context = buildContext({
       method: 'POST',
       headers: {},
       cookies: { tauros_refresh_token: 'refresh-jwt', tauros_csrf: 'match-me' },
     });
-    expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
-  });
-
-  it('permite el refresh solo-con-cookie-de-refresh cuando el header X-CSRF-Token coincide', () => {
-    const guard = buildGuard();
-    const context = buildContext({
-      method: 'POST',
-      headers: { 'x-csrf-token': 'match-me' },
-      cookies: { tauros_refresh_token: 'refresh-jwt', tauros_csrf: 'match-me' },
-    });
     expect(guard.canActivate(context)).toBe(true);
   });
 
-  it('permite login/register aunque el browser mande cookies de una sesion anterior todavia vigente, sin exigir CSRF', () => {
+  it('permite login/register/refresh/logout aunque el browser mande cookies de una sesion anterior todavia vigente, sin exigir CSRF', () => {
     const guard = buildGuard(true); // @SkipCsrf() presente en el handler
     const context = buildContext(
       {
         method: 'POST',
-        headers: {}, // el frontend NO manda X-CSRF-Token en login/register a proposito
+        headers: {}, // el frontend NO manda X-CSRF-Token en estos endpoints a proposito
         cookies: { tauros_access_token: 'stale-jwt', tauros_csrf: 'stale-csrf' },
       },
       true,

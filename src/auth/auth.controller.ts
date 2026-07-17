@@ -35,14 +35,24 @@ export class AuthController {
 
   /**
    * Setea las 3 cookies de auth para el frontend web (httpOnly access/refresh +
-   * csrf legible por JS). El móvil ignora estas cookies por completo y sigue
-   * usando el `access_token`/`refresh_token` del body con SecureStore.
+   * csrf). El móvil ignora estas cookies por completo y sigue usando el
+   * `access_token`/`refresh_token` del body con SecureStore.
+   *
+   * La cookie CSRF NO es httpOnly a proposito, pero eso solo sirve para que
+   * el browser la reenvie sola en requests futuras — un frontend en OTRO
+   * dominio (ej. tauros-front-web.onrender.com vs tauros-backend.onrender.com)
+   * jamas puede leerla via document.cookie, sin importar el flag httpOnly:
+   * es una restriccion de origen del propio navegador, no de esta cookie.
+   * Por eso el valor generado ACA se devuelve tambien (retorno de esta
+   * funcion) para que el controller lo incluya en el body de la respuesta —
+   * asi el frontend lo obtiene leyendo el JSON, no la cookie.
    */
-  private setAuthCookies(response: Response, accessToken: string, refreshToken: string) {
+  private setAuthCookies(response: Response, accessToken: string, refreshToken: string): string {
     const csrfToken = crypto.randomBytes(32).toString('hex');
     response.cookie(ACCESS_TOKEN_COOKIE, accessToken, accessTokenCookieOptions());
     response.cookie(REFRESH_TOKEN_COOKIE, refreshToken, refreshTokenCookieOptions());
     response.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions());
+    return csrfToken;
   }
 
   private clearAuthCookies(response: Response) {
@@ -57,8 +67,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Registrar un nuevo usuario' })
   async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.register(registerDto);
-    this.setAuthCookies(response, result.access_token, result.refresh_token);
-    return result;
+    const csrfToken = this.setAuthCookies(response, result.access_token, result.refresh_token);
+    return { ...result, csrfToken };
   }
 
   @Post('login')
@@ -68,7 +78,8 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(loginDto);
     if ('access_token' in result) {
-      this.setAuthCookies(response, result.access_token, result.refresh_token);
+      const csrfToken = this.setAuthCookies(response, result.access_token, result.refresh_token);
+      return { ...result, csrfToken };
     }
     return result;
   }
@@ -119,6 +130,7 @@ export class AuthController {
 
   @Post('refresh')
   @Throttle(AUTH_THROTTLE)
+  @SkipCsrf()
   @ApiOperation({ summary: 'Intercambiar refresh token por access token' })
   async refresh(
     @Body() body: RefreshTokenDto,
@@ -128,21 +140,34 @@ export class AuthController {
     // El móvil manda el refresh token en el body (SecureStore). El frontend web
     // no puede leerlo en JS porque vive en la cookie httpOnly `tauros_refresh_token`,
     // así que caemos a la cookie cuando el body no lo trae.
+    //
+    // Exento de CSRF a propósito: el frontend web necesita poder refrescar la
+    // sesión (y obtener un csrfToken nuevo, ver mas abajo) recien arrancada la
+    // app, cuando todavia no tiene ningun csrfToken en memoria — exigirlo acá
+    // seria un candado sin llave. El impacto de una request de refresh forjada
+    // desde otro sitio es bajo: el atacante no puede leer la respuesta (CORS)
+    // ni las cookies nuevas (httpOnly), en el peor caso solo extiende la
+    // sesion del propio usuario en su propio navegador.
     const refreshToken = body.refreshToken ?? request.cookies?.[REFRESH_TOKEN_COOKIE];
     if (!refreshToken) {
       throw new BadRequestException('Refresh token no encontrado');
     }
 
     const result = await this.authService.rotateRefreshToken(refreshToken);
-    this.setAuthCookies(response, result.accessToken, result.refreshToken);
+    const csrfToken = this.setAuthCookies(response, result.accessToken, result.refreshToken);
 
     return {
       access_token: result.accessToken,
       refresh_token: result.refreshToken,
+      csrfToken,
     };
   }
 
+  // Exento de CSRF: un logout forjado desde otro sitio como mucho fuerza un
+  // cierre de sesion (el atacante no gana nada, no puede leer nada), y este
+  // endpoint tiene que poder llamarse incluso sin csrfToken en memoria.
   @Post('logout')
+  @SkipCsrf()
   @ApiOperation({ summary: 'Revocar refresh token (logout)' })
   async logout(
     @Body() body: RevokeTokenDto,
@@ -184,7 +209,8 @@ export class AuthController {
   async verifyTwoFactor(@Body() body: TwoFactorVerifyDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.verifyTwoFactor(body);
     if ('access_token' in result) {
-      this.setAuthCookies(response, result.access_token, result.refresh_token);
+      const csrfToken = this.setAuthCookies(response, result.access_token, result.refresh_token);
+      return { ...result, csrfToken };
     }
     return result;
   }
