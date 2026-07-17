@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 type OpenApiSchema = Record<string, any>;
@@ -184,8 +185,20 @@ async function bootstrap() {
     transform: true,
   }));
 
-  // Habilitar CORS
-  app.enableCors();
+  // Necesario para leer req.cookies (auth por cookie httpOnly del frontend web)
+  app.use(cookieParser());
+
+  // CORS explícito: el frontend web vive en un origen distinto (ej. Render) y
+  // necesita `credentials: true` para poder mandar/recibir las cookies de auth.
+  const corsOrigins = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin: corsOrigins.length > 0 ? corsOrigins : ['http://localhost:3000'],
+    credentials: true,
+  });
 
   // Configurar headers de seguridad
   app.use((req, res, next) => {

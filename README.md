@@ -24,6 +24,10 @@ DB_SSL=true
 JWT_SECRET=tu_jwt_secret
 PORT=3000
 
+# CORS: origenes permitidos separados por coma (frontend web). Si no se define,
+# cae a http://localhost:3000 para no romper el desarrollo local.
+CORS_ORIGINS=https://tauros-front-web.onrender.com,http://localhost:3000
+
 # Refresh tokens y cifrado
 ENCRYPTION_KEY=64_hex_chars_aqui
 
@@ -84,8 +88,22 @@ Se aplico `@UseGuards(RolesGuard)` + `@Roles(...)` en todos los controladores de
 
 ## Seguridad y almacenamiento
 
-- El `access_token` y el `refresh_token` se guardan en Secure Store en el movil.
+- Movil (Expo): el `access_token` y el `refresh_token` se guardan en Secure Store y se
+  mandan como `Authorization: Bearer <token>` en cada request. Esto no cambio.
+- Web (CRA): en vez de `localStorage`, `POST /auth/login`, `POST /auth/register`,
+  `POST /auth/refresh` (y `POST /auth/2fa/verify` cuando cierra el login) setean 3
+  cookies httpOnly/legibles segun corresponda:
+  - `tauros_access_token` (httpOnly, `Path=/`, expira junto con el access token JWT)
+  - `tauros_refresh_token` (httpOnly, `Path=/auth`, expira junto con el refresh token)
+  - `tauros_csrf` (NO httpOnly, `Path=/`, valor random que el front debe reenviar en el
+    header `X-CSRF-Token` en cada `POST/PUT/PATCH/DELETE`; si no coincide con la cookie,
+    el backend responde `403`). El header Bearer del movil no necesita este check.
+  - En produccion: `Secure` + `SameSite=None` (front y backend en dominios distintos).
+    En desarrollo: `SameSite=Lax` sin `Secure` (mismo `localhost`, distinto puerto).
+  - `POST /auth/logout` limpia las 3 cookies ademas de revocar el refresh token.
 - El access token dura poco; el refresh token rota y se revoca en la base de datos.
+- Rate limiting global (100 req/60s por IP) vía `@nestjs/throttler`, con un limite mas
+  estricto (10 req/60s) en `login`, `register`, `refresh` y los endpoints de `2fa`.
 - Los datos sensibles pueden migrarse a columnas cifradas con AES-256-GCM usando `src/scripts/migrate-encrypt.ts`.
 
 ## Despliegue y migracion

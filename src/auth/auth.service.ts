@@ -1,7 +1,7 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Usuario } from '../usuario/entities/usuario.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -26,6 +26,8 @@ export class AuthService {
     @InjectRepository(TwoFactorChallenge)
     private twoFactorRepo: Repository<TwoFactorChallenge>,
     private configService: ConfigService,
+    @InjectDataSource()
+    private dataSource: DataSource,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -377,5 +379,36 @@ export class AuthService {
     await this.usuarioRepository.save(usuario);
 
     return { changed: true };
+  }
+
+  async deleteOwnAccount(userId: string): Promise<void> {
+    const usuario = await this.usuarioRepository.findOne({ where: { userId } });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (!usuario.isActive) {
+      throw new ConflictException('La cuenta ya fue eliminada');
+    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const usuarioRepository = manager.getRepository(Usuario);
+      const refreshTokenRepository = manager.getRepository(RefreshToken);
+      const twoFactorRepository = manager.getRepository(TwoFactorChallenge);
+
+      usuario.correo = `deleted-${usuario.userId}@tauros.invalid`;
+      usuario.nombre = 'Usuario';
+      usuario.apellido = 'eliminado';
+      usuario.cedula = `ELIMINADO-${usuario.userId}`;
+      usuario.telefono = '0000000000';
+      usuario.password = crypto.randomBytes(32).toString('hex');
+      usuario.isActive = false;
+      usuario.twoFactorEnabled = false;
+
+      await usuarioRepository.save(usuario);
+      await refreshTokenRepository.delete({ usuario: { userId } });
+      await twoFactorRepository.delete({ usuario: { userId } });
+    });
   }
 }

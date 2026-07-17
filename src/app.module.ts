@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsuarioModule } from './usuario/usuario.module';
@@ -19,6 +21,8 @@ import { SugerenciaModule } from './sugerencia/sugerencia.module';
 import { CategoriaModule } from './categoria/categoria.module';
 import { TipoModule } from './tipo/tipo.module';
 import { AuthModule } from './auth/auth.module';
+import { LegalModule } from './legal/legal.module';
+import { CsrfGuard } from './auth/csrf.guard';
 
 @Module({
   imports: [
@@ -26,6 +30,13 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 60s
+        limit: 100, // 100 requests / 60s por IP
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -72,8 +83,19 @@ import { AuthModule } from './auth/auth.module';
     CategoriaModule,
     TipoModule,
     AuthModule,
+    LegalModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
+    },
+  ],
 })
 export class AppModule {}
