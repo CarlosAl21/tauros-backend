@@ -1,7 +1,7 @@
 import { Controller, Get, Header } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-const LAST_UPDATED = '16 de julio de 2026';
+const LAST_UPDATED = '17 de julio de 2026';
 const CONTACT_EMAIL = 'g4to101@gmail.com';
 
 function htmlDocument(title: string, bodyContent: string): string {
@@ -87,20 +87,40 @@ export class LegalController {
       su perfil dentro de la App.</li>
     <li><strong>Rectificación:</strong> corregir o actualizar sus datos personales en
       cualquier momento mediante la opción "Editar datos personales" en su Perfil.</li>
-    <li><strong>Eliminación:</strong> eliminar su cuenta en cualquier momento desde la
-      opción "Eliminar cuenta" en la sección Perfil de la App. Esta acción es irreversible
-      y anonimiza de forma permanente los datos personales identificables (nombre, correo,
-      cédula, teléfono y contraseña) y revoca inmediatamente todas las sesiones y tokens
-      activos asociados a la cuenta.</li>
+    <li>
+      <strong>Eliminación:</strong> el usuario puede solicitar la eliminación de su cuenta
+      en cualquier momento siguiendo estos pasos:
+      <ol>
+        <li>Abrir la App e iniciar sesión con su cuenta.</li>
+        <li>Ir a la sección <strong>Perfil</strong>.</li>
+        <li>Seleccionar la opción <strong>"Eliminar cuenta"</strong>.</li>
+        <li>Confirmar la acción cuando la App lo solicite.</li>
+      </ol>
+      Esta acción es irreversible y se procesa de inmediato.
+    </li>
   </ul>
 
   <h2>5. Retención de datos</h2>
-  <p>
-    Tras la eliminación de una cuenta, los registros históricos de entrenamiento y
-    nutrición asociados pueden conservarse de forma anonimizada, es decir, sin ningún
-    dato que permita identificar al usuario, únicamente con fines estadísticos e
-    históricos internos.
-  </p>
+  <p>Al eliminar una cuenta:</p>
+  <ul>
+    <li>
+      <strong>Se eliminan de forma permanente e inmediata:</strong> las sesiones y tokens
+      de acceso activos (refresh tokens) y cualquier desafío de verificación en dos pasos
+      (2FA) pendiente.
+    </li>
+    <li>
+      <strong>Se anonimizan de forma permanente e inmediata:</strong> los datos personales
+      identificables asociados a la cuenta (nombre, apellido, correo electrónico, cédula,
+      teléfono y contraseña), que se sobrescriben y dejan de estar vinculados a una
+      identidad real.
+    </li>
+    <li>
+      <strong>Se conservan de forma indefinida, ya anonimizados:</strong> los registros
+      históricos de entrenamiento, composición corporal y nutrición asociados a la cuenta,
+      exclusivamente con fines estadísticos e históricos internos, sin ningún dato que
+      permita identificar al usuario que los generó.
+    </li>
+  </ul>
 
   <h2>6. Menores de edad</h2>
   <p>
