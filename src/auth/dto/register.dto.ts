@@ -1,11 +1,14 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsDateString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsDateString } from 'class-validator';
 import { IsEcuadorianId, IsAlphaSpace, IsEcuadorPhone } from '../validators/ecuador-validator';
 
 export class RegisterDto {
+  // Opcional: guideline 5.1.1(v) de Apple prohibe exigir datos no esenciales
+  // para el registro. Si el admin del gym necesita cedula/telefono/fecha de
+  // nacimiento para asignar rutinas, los completa despues desde el panel web.
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsEcuadorianId({ message: 'Cédula/RUC inválida' })
-  cedula: string;
+  cedula?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -17,9 +20,9 @@ export class RegisterDto {
   @IsAlphaSpace({ message: 'Apellido sólo debe contener letras y espacios' })
   apellido: string;
 
+  @IsOptional()
   @IsDateString()
-  @IsNotEmpty()
-  fechaNacimiento: string;
+  fechaNacimiento?: string;
 
   @IsEmail()
   @IsNotEmpty()
@@ -30,8 +33,8 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @IsEcuadorPhone({ message: 'Teléfono inválido' })
-  telefono: string;
+  telefono?: string;
 }

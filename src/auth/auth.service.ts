@@ -40,18 +40,23 @@ export class AuthService {
       throw new ConflictException('El correo ya está registrado');
     }
 
-    const existingUserByCedula = await this.usuarioRepository.findOne({
-      where: { cedula: registerDto.cedula },
-    });
+    // cedula/fechaNacimiento/telefono son opcionales desde el registro movil
+    // (guideline 5.1.1(v) de Apple): si no vienen, no hay nada que validar ni
+    // que convertir aca.
+    if (registerDto.cedula) {
+      const existingUserByCedula = await this.usuarioRepository.findOne({
+        where: { cedula: registerDto.cedula },
+      });
 
-    if (existingUserByCedula) {
-      throw new ConflictException('La cédula ya está registrada');
+      if (existingUserByCedula) {
+        throw new ConflictException('La cédula ya está registrada');
+      }
     }
 
     // Crear nuevo usuario
     const usuario = this.usuarioRepository.create({
       ...registerDto,
-      fechaNacimiento: new Date(registerDto.fechaNacimiento),
+      fechaNacimiento: registerDto.fechaNacimiento ? new Date(registerDto.fechaNacimiento) : undefined,
     });
 
     await this.usuarioRepository.save(usuario);

@@ -15,8 +15,8 @@ export class Usuario {
     @PrimaryGeneratedColumn('uuid')
     userId: string;
 
-    @Column({ unique: true })
-    cedula: string;
+    @Column({ unique: true, nullable: true })
+    cedula: string | null;
 
     @Column()
     nombre: string;
@@ -24,8 +24,8 @@ export class Usuario {
     @Column()
     apellido: string;
 
-    @Column()
-    fechaNacimiento: Date;
+    @Column({ nullable: true })
+    fechaNacimiento: Date | null;
 
     @Column({ unique: true })
     correo: string;
@@ -33,8 +33,8 @@ export class Usuario {
     @Column()
     password: string;
 
-    @Column()
-    telefono: string;
+    @Column({ nullable: true })
+    telefono: string | null;
 
     @Column({
         type: 'enum',
