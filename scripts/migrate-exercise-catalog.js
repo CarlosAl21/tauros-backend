@@ -3,13 +3,17 @@
 /**
  * Migracion unica: sube los GIFs del dataset de ejercicios a Cloudinary y
  * genera un catalogo liviano que el front-web bundlea para el selector
- * "Elegir del catalogo". Cada ejercicio hace dos subidas (ver uploadOne):
- * 1) el GIF como resource_type "image" (subirlo directo como "video" es
- *    rechazado por esta cuenta con "Unsupported file type gif"),
- * 2) su conversion a .mp4 -- descargada por HTTPS normal y re-subida como
- *    bytes -- como resource_type "video" de verdad bajo /video/upload/, para
- *    que el resto de la app (ExerciseVideoThumbnail, normalizeVideoUrl) la
- *    trate igual que un video subido a mano.
+ * "Elegir del catalogo".
+ *
+ * Un GIF es, para Cloudinary, un tipo de imagen -- no lo acepta como
+ * resource_type "video" directo ("Unsupported file type gif"). En vez de
+ * pedirle a Cloudinary que lo suba como imagen y despues re-subir su
+ * conversion a .mp4 (dos llamadas por ejercicio, doble superficie para
+ * problemas de cuenta), la conversion se hace ACA con ffmpeg y se sube una
+ * sola vez como resource_type "video" real bajo /video/upload/ -- el mismo
+ * path que usan los videos subidos a mano (ver useTaurosApp.js), asi que
+ * ExerciseVideoThumbnail/normalizeVideoUrl funcionan sin ningun caso
+ * especial. Requiere ffmpeg instalado (`ffmpeg -version`).
  *
  * No se ejecuta como parte de la app: se corre una sola vez a mano.
  *
@@ -22,7 +26,9 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { execFile } = require('child_process');
 const { v2: cloudinary } = require('cloudinary');
 const { resolveMuscleIds, resolveBodyPartLabel } = require('./exercise-catalog-mapping');
 
@@ -69,71 +75,52 @@ function saveCatalog(catalog) {
   fs.writeFileSync(OUTPUT_PATH, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');
 }
 
-function uploadBuffer(buffer, options) {
+function convertGifToMp4(gifPath, mp4Path) {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error || !result) {
-        reject(error || new Error('Cloudinary no devolvio resultado'));
+    execFile('ffmpeg', [
+      '-y',
+      '-i', gifPath,
+      '-movflags', 'faststart',
+      '-pix_fmt', 'yuv420p',
+      '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+      mp4Path,
+    ], (error) => {
+      if (error) {
+        reject(new Error(`ffmpeg fallo: ${error.message}`));
         return;
       }
-      resolve(result);
+      resolve();
     });
-    stream.end(buffer);
   });
-}
-
-async function fetchBuffer(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`No se pudo descargar ${url}: HTTP ${response.status}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
 }
 
 async function uploadOne(exercise) {
-  const videoPath = path.join(DATASET_ROOT, exercise.gif_url);
-  const gifPublicId = `tauros/catalogo/gifs/ex-${exercise.id}`;
+  const gifPath = path.join(DATASET_ROOT, exercise.gif_url);
   const videoPublicId = `${CLOUDINARY_FOLDER}/ex-${exercise.id}`;
+  const tmpMp4Path = path.join(os.tmpdir(), `tauros-catalogo-ex-${exercise.id}.mp4`);
 
-  // Paso 1: el GIF se sube como "image" (su tipo real en Cloudinary; subirlo
-  // directo como resource_type "video" es rechazado por esta cuenta con
-  // "Unsupported file type gif"). Pedirle a Cloudinary que lo entregue como
-  // .mp4 SI funciona, pero unicamente por la ruta /image/upload/ -- probado
-  // a mano: /video/upload/ para este mismo asset devuelve 404.
-  await cloudinary.uploader.upload(videoPath, {
-    resource_type: 'image',
-    public_id: gifPublicId,
-    overwrite: false,
-  });
+  try {
+    await convertGifToMp4(gifPath, tmpMp4Path);
 
-  const derivedMp4Url = cloudinary.url(gifPublicId, { format: 'mp4', secure: true });
+    const videoResult = await cloudinary.uploader.upload(tmpMp4Path, {
+      resource_type: 'video',
+      public_id: videoPublicId,
+      overwrite: false,
+    });
 
-  // Paso 2: bajamos ese .mp4 nosotros mismos (HTTPS normal, sin pasar por la
-  // funcion de "fetch remoto" de Cloudinary -- esta cuenta la deshabilito a
-  // mitad de la primera corrida con "action is disabled") y lo re-subimos
-  // como bytes, como un asset resource_type "video" de verdad bajo
-  // /video/upload/. Mismo path que los videos subidos a mano (ver
-  // useTaurosApp.js), asi que ExerciseVideoThumbnail, normalizeVideoUrl, etc.
-  // funcionan igual sin ningun caso especial.
-  const mp4Buffer = await fetchBuffer(derivedMp4Url);
-  const videoResult = await uploadBuffer(mp4Buffer, {
-    resource_type: 'video',
-    public_id: videoPublicId,
-    overwrite: false,
-  });
-
-  const result = { secure_url: videoResult.secure_url };
-
-  return {
-    id: exercise.id,
-    name: exercise.name,
-    bodyPart: exercise.body_part,
-    bodyPartLabel: resolveBodyPartLabel(exercise.body_part),
-    target: exercise.target,
-    equipment: exercise.equipment,
-    muscleIds: resolveMuscleIds(exercise),
-    videoUrl: result.secure_url,
-  };
+    return {
+      id: exercise.id,
+      name: exercise.name,
+      bodyPart: exercise.body_part,
+      bodyPartLabel: resolveBodyPartLabel(exercise.body_part),
+      target: exercise.target,
+      equipment: exercise.equipment,
+      muscleIds: resolveMuscleIds(exercise),
+      videoUrl: videoResult.secure_url,
+    };
+  } finally {
+    fs.rm(tmpMp4Path, { force: true }, () => {});
+  }
 }
 
 async function processInBatches(items, catalogById) {
