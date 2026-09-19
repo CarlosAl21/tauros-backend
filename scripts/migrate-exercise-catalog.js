@@ -30,7 +30,9 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { v2: cloudinary } = require('cloudinary');
-const { resolveMuscleIds, resolveBodyPartLabel } = require('./exercise-catalog-mapping');
+const {
+  resolveMuscleIds, resolveBodyPartLabel, resolveTargetLabel, translateExerciseName,
+} = require('./exercise-catalog-mapping');
 
 const DATASET_ROOT = path.resolve(__dirname, '../../exercises-dataset');
 const DATASET_JSON = path.join(DATASET_ROOT, 'data/exercises.json');
@@ -111,9 +113,11 @@ async function uploadOne(exercise) {
     return {
       id: exercise.id,
       name: exercise.name,
+      nameEs: translateExerciseName(exercise.name),
       bodyPart: exercise.body_part,
-      bodyPartLabel: resolveBodyPartLabel(exercise.body_part),
+      tipoLabel: resolveBodyPartLabel(exercise.body_part),
       target: exercise.target,
+      categoriaLabel: resolveTargetLabel(exercise.target),
       equipment: exercise.equipment,
       muscleIds: resolveMuscleIds(exercise),
       videoUrl: videoResult.secure_url,
