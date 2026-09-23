@@ -20,7 +20,7 @@ export class ComposicionCorporalService {
   async create(createComposicionCorporalDto: CreateComposicionCorporalDto) {
     const usuario = await this.usuarioRepository.findOne({ where: { userId: createComposicionCorporalDto.usuarioId } });
     if (!usuario) {
-      throw new Error('Usuario not found');
+      throw new NotFoundException('Usuario no encontrado');
     }
     const composicionCorporal = this.composicionCorporalRepository.create({
       peso: createComposicionCorporalDto.peso,
@@ -28,6 +28,8 @@ export class ComposicionCorporalService {
       grasaCorporal: createComposicionCorporalDto.grasaCorporal,
       edadCorporal: createComposicionCorporalDto.edadCorporal,
       grasaVisceral: createComposicionCorporalDto.grasaVisceral,
+      masaMuscularKg: createComposicionCorporalDto.masaMuscularKg,
+      masaMuscularPorcentaje: createComposicionCorporalDto.masaMuscularPorcentaje,
       usuario: usuario,
     });
     const saved = await this.composicionCorporalRepository.save(composicionCorporal);
@@ -91,21 +93,23 @@ export class ComposicionCorporalService {
       relations: ['usuario'],
     });
     if (!composicionActual) {
-      throw new Error('ComposicionCorporal not found');
+      throw new NotFoundException('Composicion corporal no encontrada');
     }
 
-    const nuevaComposicion = this.composicionCorporalRepository.create({
-      peso: updateComposicionCorporalDto.peso ?? composicionActual.peso,
-      talla: updateComposicionCorporalDto.talla ?? composicionActual.talla,
-      grasaCorporal: updateComposicionCorporalDto.grasaCorporal ?? composicionActual.grasaCorporal,
-      edadCorporal: updateComposicionCorporalDto.edadCorporal ?? composicionActual.edadCorporal,
-      grasaVisceral: updateComposicionCorporalDto.grasaVisceral ?? composicionActual.grasaVisceral,
-      usuario: composicionActual.usuario,
-    });
+    // Update the loaded entity in place so save() issues an UPDATE on the same id.
+    // Undefined DTO fields keep the current value (explicit null cannot clear, same as before).
+    composicionActual.peso = updateComposicionCorporalDto.peso ?? composicionActual.peso;
+    composicionActual.talla = updateComposicionCorporalDto.talla ?? composicionActual.talla;
+    composicionActual.grasaCorporal = updateComposicionCorporalDto.grasaCorporal ?? composicionActual.grasaCorporal;
+    composicionActual.edadCorporal = updateComposicionCorporalDto.edadCorporal ?? composicionActual.edadCorporal;
+    composicionActual.grasaVisceral = updateComposicionCorporalDto.grasaVisceral ?? composicionActual.grasaVisceral;
+    composicionActual.masaMuscularKg = updateComposicionCorporalDto.masaMuscularKg ?? composicionActual.masaMuscularKg;
+    composicionActual.masaMuscularPorcentaje =
+      updateComposicionCorporalDto.masaMuscularPorcentaje ?? composicionActual.masaMuscularPorcentaje;
 
-    const saved = await this.composicionCorporalRepository.save(nuevaComposicion);
+    await this.composicionCorporalRepository.save(composicionActual);
     return this.composicionCorporalRepository.findOne({
-      where: { composicionCorporalId: saved.composicionCorporalId },
+      where: { composicionCorporalId: id },
       relations: ['usuario'],
     });
   }
@@ -113,7 +117,7 @@ export class ComposicionCorporalService {
   async remove(id: string) {
     const composicion = await this.composicionCorporalRepository.findOne({ where: { composicionCorporalId: id } });
     if (!composicion) {
-      throw new Error('ComposicionCorporal not found');
+      throw new NotFoundException('Composicion corporal no encontrada');
     }
     return this.composicionCorporalRepository.remove(composicion);
   }
