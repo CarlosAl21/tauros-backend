@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, BadRequestException, InternalServerErrorException, Logger, UnauthorizedException } from '@nestjs/common';
 import { ComposicionCorporalService } from './composicion-corporal.service';
 import { CreateComposicionCorporalDto } from './dto/create-composicion-corporal.dto';
 import { UpdateComposicionCorporalDto } from './dto/update-composicion-corporal.dto';
@@ -30,19 +30,47 @@ export class ComposicionCorporalController {
 
   @Get()
   @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
-  async findAll() {
+  async findAll(@Req() req: { user?: { userId?: string; rol?: Rol } }) {
+    // USER role only sees their own records; ADMIN/COACH see all.
+    const usuarioId = this.ownerScope(req);
     try {
-      return await this.composicionCorporalService.findAll();
+      return await this.composicionCorporalService.findAll(usuarioId);
     } catch (err) {
       Logger.error('Error en findAll composicion-corporal', err?.stack || err?.message || err);
       throw new InternalServerErrorException('Error interno al obtener composiciones corporales');
     }
   }
 
+  // Must be declared before @Get(':id') so it is not shadowed.
+  @Get('me/latest')
+  @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
+  findMyLatest(@Req() req: { user?: { userId?: string; rol?: Rol } }) {
+    if (!req.user?.userId) {
+      throw new UnauthorizedException();
+    }
+    return this.composicionCorporalService.findLatestByUsuario(req.user.userId);
+  }
+
   @Get(':id')
   @Roles(Rol.ADMIN, Rol.COACH, Rol.USER)
-  findOne(@Param('id') id: string) {
-    return this.composicionCorporalService.findOne(id);
+  findOne(@Req() req: { user?: { userId?: string; rol?: Rol } }, @Param('id') id: string) {
+    // USER role may only read their own records.
+    const usuarioId = this.ownerScope(req);
+    return this.composicionCorporalService.findOne(id, usuarioId);
+  }
+
+  /**
+   * Returns the user id to scope queries by for USER role, or undefined for
+   * ADMIN/COACH. Fails closed if a USER token carries no user id.
+   */
+  private ownerScope(req: { user?: { userId?: string; rol?: Rol } }): string | undefined {
+    if (req.user?.rol !== Rol.USER) {
+      return undefined;
+    }
+    if (!req.user.userId) {
+      throw new UnauthorizedException();
+    }
+    return req.user.userId;
   }
 
   @Patch(':id')

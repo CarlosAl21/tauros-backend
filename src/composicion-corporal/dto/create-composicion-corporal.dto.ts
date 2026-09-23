@@ -2,31 +2,31 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateComposicionCorporalDto {
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsNotEmpty()
     peso: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     talla?: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     grasaCorporal?: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     edadCorporal?: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     grasaVisceral?: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     masaMuscularKg?: number;
 
-    @IsNumber()
+    @IsNumber({ maxDecimalPlaces: 2 })
     @IsOptional()
     masaMuscularPorcentaje?: number;
 

@@ -1,4 +1,5 @@
 import { Usuario } from "src/usuario/entities/usuario.entity";
+import { decimalTransformer } from "src/common/transformers/decimal.transformer";
 import { BeforeInsert, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 
 @Entity()
@@ -7,25 +8,25 @@ export class ComposicionCorporal {
     @PrimaryGeneratedColumn('uuid')
     composicionCorporalId: string;
 
-    @Column()
+    @Column('numeric', { precision: 6, scale: 2, transformer: decimalTransformer })
     peso: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     talla: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     grasaCorporal: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     edadCorporal: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     grasaVisceral: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     masaMuscularKg: number;
 
-    @Column({ nullable: true })
+    @Column('numeric', { precision: 6, scale: 2, nullable: true, transformer: decimalTransformer })
     masaMuscularPorcentaje: number;
 
     @Column({default: () => 'CURRENT_TIMESTAMP'})

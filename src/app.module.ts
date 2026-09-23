@@ -22,6 +22,7 @@ import { CategoriaModule } from './categoria/categoria.module';
 import { TipoModule } from './tipo/tipo.module';
 import { AuthModule } from './auth/auth.module';
 import { LegalModule } from './legal/legal.module';
+import { RegistroCargaModule } from './registro-carga/registro-carga.module';
 import { CsrfGuard } from './auth/csrf.guard';
 
 @Module({
@@ -84,6 +85,7 @@ import { CsrfGuard } from './auth/csrf.guard';
     TipoModule,
     AuthModule,
     LegalModule,
+    RegistroCargaModule,
   ],
   controllers: [AppController],
   providers: [

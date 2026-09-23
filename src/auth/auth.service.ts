@@ -14,6 +14,7 @@ import { TwoFactorChallenge, TwoFactorPurpose } from './entities/two-factor-chal
 import { TwoFactorSendDto } from './dto/two-factor-send.dto';
 import { TwoFactorVerifyDto } from './dto/two-factor-verify.dto';
 import { ConfigService } from '@nestjs/config';
+import { RegistroCarga } from '../registro-carga/entities/registro-carga.entity';
 
 @Injectable()
 export class AuthService {
@@ -414,6 +415,9 @@ export class AuthService {
       await usuarioRepository.save(usuario);
       await refreshTokenRepository.delete({ usuario: { userId } });
       await twoFactorRepository.delete({ usuario: { userId } });
+      // Account deletion is a soft delete (anonymization), so FK CASCADE never
+      // fires; remove the user's lifted-load history explicitly.
+      await manager.getRepository(RegistroCarga).delete({ usuario: { userId } });
     });
   }
 }
